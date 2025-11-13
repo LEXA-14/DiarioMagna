@@ -1,7 +1,94 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Diario Magna</PageTitle>
 
-<h1>Hello, world!</h1>
+<section class="bg-dark text-white py-4 mb-4">
+    <div class="container">
+        <h1 class="h3 mb-1">Diario Magna Publicadora</h1>
+        <div class="small">
+            Sistema de gestión de artículos entre Secretaría, Relaciones Públicas y Encargado del Sistema.
+        </div>
+    </div>
+</section>
 
-Welcome to your new app.
+<div class="container mb-5">
+    <AuthorizeView>
+        <Authorized Context="userContext">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <AuthorizeView Roles="Secretaria,RelacionesPublicas">
+                        <Authorized Context="secretariaContext">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">Crear Artículo</h5>
+                                    <p class="card-text small flex-grow-1">
+                                        Puede redactar noticias y enviarlas para revisión.
+                                    </p>
+                                    <a href="articles/create" class="btn btn-primary btn-sm mt-2">
+                                        Ir a Crear Artículo
+                                    </a>
+                                </div>
+                            </div>
+                        </Authorized>
+                    </AuthorizeView>
+                </div>
+
+                <div class="col-md-4">
+                    <AuthorizeView Roles="RelacionesPublicas">
+                        <Authorized Context="rpContext">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">Relaciones Públicas</h5>
+                                    <p class="card-text small flex-grow-1">
+                                        Revisar, editar, aprobar o rechazar los artículos enviados por Secretaría.
+                                    </p>
+                                    <a href="admin/solicitudes" class="btn btn-primary btn-sm mt-2">
+                                        Ir al panel de solicitudes
+                                    </a>
+                                </div>
+                            </div>
+                        </Authorized>
+                    </AuthorizeView>
+                </div>
+
+                <div class="col-md-4">
+                    <AuthorizeView Roles="EncargadoSistema">
+                        <Authorized Context="encargadoContext">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">Encargado del Sistema</h5>
+                                    <p class="card-text small flex-grow-1">
+                                        Seleccionar los noticieros a los que se enviarán los artículos aprobados.
+                                    </p>
+                                    <a href="admin/envios" class="btn btn-primary btn-sm mt-2">
+                                        Ir al panel de envíos
+                                    </a>
+                                </div>
+                            </div>
+                        </Authorized>
+                    </AuthorizeView>
+                </div>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">Bienvenido a Diario Magna</h5>
+                            <p class="card-text small">
+                                Inicie sesión o regístrese para poder utilizar el flujo completo de creación, revisión y envío de noticias.
+                            </p>
+                            <a href="Account/Login" class="btn btn-primary btn-sm me-2">
+                                Iniciar sesión
+                            </a>
+                            <a href="Account/Register" class="btn btn-outline-secondary btn-sm">
+                                Registrarse
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>

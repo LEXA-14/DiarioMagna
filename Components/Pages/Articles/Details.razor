@@ -1,0 +1,158 @@
+﻿@page "/articles/details/{Id:int}"
+@rendermode InteractiveServer
+@inject ApplicationDbContext Db
+@inject NavigationManager Navigation
+
+<section class="bg-dark text-white py-3 mb-4">
+    <div class="container d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <div class="me-3">
+                <span class="fs-2">📰</span>
+            </div>
+            <div>
+                <h1 class="h4 mb-1">Diario Magna Publicadora</h1>
+                <div class="small">Detalle del Artículo</div>
+            </div>
+        </div>
+        <button class="btn btn-outline-light btn-sm" @onclick="GoBack">Volver</button>
+    </div>
+</section>
+
+<div class="container mb-5">
+    @if (_loading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border" role="status"></div>
+        </div>
+    }
+    else if (_article == null)
+    {
+        <div class="alert alert-danger">
+            No se encontró el artículo solicitado.
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-body">
+                <h2 class="h4 mb-1">@_article.Title</h2>
+                <div class="small text-muted mb-2">
+                    @_article.AuthorName · @_article.AuthorEmail · @_article.CreatedAt.ToString("dd/MM/yyyy")
+                </div>
+                <div class="small text-muted mb-3">
+                    Categoría: @_article.CategoryName
+                    @if (!string.IsNullOrWhiteSpace(_article.PlanName))
+                    {
+                        <span> · Plan: @_article.PlanName</span>
+                    }
+                    <span> · Estado: @_article.StatusText</span>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_article.ReferenceText))
+                {
+                    <div class="mb-3">
+                        <span class="fw-semibold">Referencia:</span>
+                        <span class="text-muted"> @_article.ReferenceText</span>
+                    </div>
+                }
+
+                <hr />
+
+                <div class="article-content" style="white-space:pre-wrap;">
+                    @_article.Content
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_article.UploadedFilePath))
+                {
+                    <div class="mt-4">
+                        <a class="btn btn-outline-primary btn-sm" href="@("/" + _article.UploadedFilePath)" target="_blank">
+                            Ver archivo adjunto
+                        </a>
+                    </div>
+                }
+
+                <div class="mt-4 d-flex gap-2">
+                    <button class="btn btn-secondary btn-sm" @onclick="GoBack">Volver al Panel</button>
+                    <button class="btn btn-warning btn-sm" @onclick="EditArticle">Editar Artículo</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code
+{
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool _loading = true;
+    private ArticleDetailsModel _article;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var entity = await Db.Articles
+            .Include(a => a.Category)
+            .Include(a => a.Plan)
+            .FirstOrDefaultAsync(a => a.Id == Id);
+
+        if (entity != null)
+        {
+            _article = new ArticleDetailsModel
+            {
+                Id = entity.Id,
+                Title = entity.Title,
+                AuthorName = entity.AuthorName,
+                AuthorEmail = entity.AuthorEmail,
+                CreatedAt = entity.CreatedAt,
+                CategoryName = entity.Category != null ? entity.Category.Name : "",
+                PlanName = entity.Plan != null ? entity.Plan.Name : "",
+                Status = entity.Status,
+                StatusText = GetStatusText(entity.Status),
+                Content = entity.Content,
+                ReferenceText = entity.ReferenceText,
+                UploadedFilePath = entity.UploadedFilePath
+            };
+        }
+
+        _loading = false;
+    }
+
+    private string GetStatusText(ArticleStatus status)
+    {
+        return status switch
+        {
+            ArticleStatus.PendingReview => "Pendiente",
+            ArticleStatus.Approved => "Aprobado",
+            ArticleStatus.Rejected => "Rechazado",
+            ArticleStatus.Sent => "Enviado",
+            _ => "Borrador"
+        };
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/admin/solicitudes");
+    }
+
+    private void EditArticle()
+    {
+        if (_article != null)
+            Navigation.NavigateTo($"/articles/edit/{_article.Id}");
+    }
+
+    private class ArticleDetailsModel
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string AuthorName { get; set; } = string.Empty;
+        public string AuthorEmail { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
+        public string PlanName { get; set; } = string.Empty;
+        public ArticleStatus Status { get; set; }
+        public string StatusText { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public string ReferenceText { get; set; } = string.Empty;
+        public string UploadedFilePath { get; set; } = string.Empty;
+    }
+}

@@ -1,0 +1,251 @@
+﻿@page "/articles/edit/{Id:int}"
+@rendermode InteractiveServer
+@inject ApplicationDbContext Db
+@inject NavigationManager Navigation
+@inject IWebHostEnvironment Env
+
+<section class="bg-dark text-white py-3 mb-4">
+    <div class="container d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <div class="me-3">
+                <span class="fs-2">📰</span>
+            </div>
+            <div>
+                <h1 class="h4 mb-1">Diario Magna Publicadora</h1>
+                <div class="small">Editar Artículo</div>
+            </div>
+        </div>
+        <button class="btn btn-outline-light btn-sm" @onclick="Cancel">
+            Volver
+        </button>
+    </div>
+</section>
+
+<div class="container mb-5">
+    @if (_loading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border" role="status"></div>
+        </div>
+    }
+    else if (_model == null)
+    {
+        <div class="alert alert-danger">
+            No se encontró el artículo solicitado.
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <EditForm Model="_model" OnValidSubmit="HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Nombre del Autor</label>
+                            <InputText class="form-control" @bind-Value="_model.AuthorName" />
+                            <ValidationMessage For="@(() => _model.AuthorName)" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Correo Electrónico</label>
+                            <InputText class="form-control" @bind-Value="_model.AuthorEmail" />
+                            <ValidationMessage For="@(() => _model.AuthorEmail)" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Número de Teléfono</label>
+                            <InputText class="form-control" @bind-Value="_model.AuthorPhone" />
+                            <ValidationMessage For="@(() => _model.AuthorPhone)" />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Título del Artículo</label>
+                            <InputText class="form-control" @bind-Value="_model.Title" />
+                            <ValidationMessage For="@(() => _model.Title)" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Categoría</label>
+                            <InputSelect class="form-select" @bind-Value="_model.CategoryId">
+                                <option value="">Seleccione una categoría</option>
+                                @foreach (var c in _categories)
+                                {
+                                    <option value="@c.Id">@c.Name</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => _model.CategoryId)" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Añada una referencia</label>
+                            <InputText class="form-control" @bind-Value="_model.ReferenceText" />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Contenido del Artículo</label>
+                            <InputTextArea class="form-control" @bind-Value="_model.Content" rows="8" />
+                            <ValidationMessage For="@(() => _model.Content)" />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Archivo actual</label>
+                            @if (!string.IsNullOrWhiteSpace(_existingFile))
+                            {
+                                <div class="mb-2">
+                                    <a href="@("/" + _existingFile)" target="_blank">Ver archivo actual</a>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="mb-2 small text-muted">
+                                    Este artículo no tiene archivo adjunto.
+                                </div>
+                            }
+
+                            <label class="form-label fw-semibold">Reemplazar Archivo (opcional)</label>
+                            <div class="upload-dropzone d-flex flex-column align-items-center justify-content-center text-center">
+                                <InputFile OnChange="HandleFileSelected" class="upload-input" />
+                                <div class="mb-2">
+                                    <span class="display-6">⬆️</span>
+                                </div>
+                                <div class="small">
+                                    Haz clic para seleccionar un archivo<br />
+                                    Formatos: JPG, PNG, PDF, DOC, DOCX, MP4
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(_selectedFileName))
+                                {
+                                    <div class="mt-2 small text-muted">
+                                        Archivo seleccionado: @_selectedFileName
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="button" class="btn btn-outline-secondary px-4" @onclick="Cancel">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary px-4">
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+</div>
+
+@code
+{
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool _loading = true;
+    private ArticleEditModel _model;
+    private List<Category> _categories = new List<Category>();
+    private IBrowserFile _uploadedFile;
+    private string _selectedFileName = string.Empty;
+    private string _existingFile = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _categories = await Db.Categories.Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync();
+
+        var entity = await Db.Articles.FirstOrDefaultAsync(a => a.Id == Id);
+        if (entity != null)
+        {
+            _model = new ArticleEditModel
+            {
+                Id = entity.Id,
+                AuthorName = entity.AuthorName,
+                AuthorEmail = entity.AuthorEmail,
+                AuthorPhone = entity.AuthorPhone,
+                Title = entity.Title,
+                CategoryId = entity.CategoryId,
+                ReferenceText = entity.ReferenceText,
+                Content = entity.Content
+            };
+            _existingFile = entity.UploadedFilePath;
+        }
+
+        _loading = false;
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/admin/solicitudes");
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        _uploadedFile = e.File;
+        _selectedFileName = _uploadedFile?.Name ?? string.Empty;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        var entity = await Db.Articles.FirstOrDefaultAsync(a => a.Id == Id);
+        if (entity == null)
+            return;
+
+        entity.AuthorName = _model.AuthorName;
+        entity.AuthorEmail = _model.AuthorEmail;
+        entity.AuthorPhone = _model.AuthorPhone;
+        entity.Title = _model.Title;
+        entity.CategoryId = _model.CategoryId;
+        entity.ReferenceText = _model.ReferenceText ?? string.Empty;
+        entity.Content = _model.Content;
+
+        if (_uploadedFile != null)
+        {
+            var uploadsFolder = Path.Combine(Env.WebRootPath, "uploads", "articles");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(_uploadedFile.Name);
+            var filePath = Path.Combine(uploadsFolder, fileName);
+
+            await using var stream = _uploadedFile.OpenReadStream(long.MaxValue);
+            await using var fileStream = File.Create(filePath);
+            await stream.CopyToAsync(fileStream);
+
+            entity.UploadedFilePath = Path.Combine("uploads", "articles", fileName).Replace("\\", "/");
+        }
+
+        await Db.SaveChangesAsync();
+        Navigation.NavigateTo("/admin/solicitudes");
+    }
+
+    private class ArticleEditModel
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(150)]
+        public string AuthorName { get; set; } = string.Empty;
+
+        [Required]
+        [EmailAddress]
+        [StringLength(200)]
+        public string AuthorEmail { get; set; } = string.Empty;
+
+        [StringLength(30)]
+        public string AuthorPhone { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(200)]
+        public string Title { get; set; } = string.Empty;
+
+        [Required]
+        public int CategoryId { get; set; }
+
+        public string ReferenceText { get; set; } = string.Empty;
+
+        [Required]
+        public string Content { get; set; } = string.Empty;
+    }
+}
