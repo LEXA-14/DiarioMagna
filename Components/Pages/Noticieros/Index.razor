@@ -1,0 +1,305 @@
+﻿@page "/admin/noticieros"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "EncargadoSistema,Administrador")]
+@using DiarioMagna.Data
+@using DiarioMagna.Domain.Models
+@using Microsoft.EntityFrameworkCore
+@using System.ComponentModel.DataAnnotations
+@inject ApplicationDbContext Db
+
+<section class="admin-hero">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="d-flex align-items-center">
+                <div class="admin-hero-icon me-3">
+                    <span class="fs-2">📡</span>
+                </div>
+                <div>
+                    <h1 class="h4 mb-1 text-white">Gestión de Noticieros</h1>
+                    <div class="small text-white-50">Administre los noticieros a los que se envían los artículos</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="admin-list-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-12 col-lg-5">
+                <div class="card shadow-sm border-0 admin-article-card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-1">@(_isEditing ? "Editar Noticiero" : "Nuevo Noticiero")</h5>
+                        <p class="small text-muted mb-3">Complete la información y guarde para actualizar la lista.</p>
+
+                        @if (!string.IsNullOrWhiteSpace(_statusMessage))
+                        {
+                            <div class="alert alert-info py-2 px-3 small mb-3">
+                                @_statusMessage
+                            </div>
+                        }
+
+                        <EditForm Model="_model" OnValidSubmit="SaveNoticiero">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary class="text-danger small" />
+
+                            <div class="mb-3">
+                                <label class="form-label auth-label" for="Noticiero_Name">Nombre del Noticiero</label>
+                                <InputText id="Noticiero_Name" class="form-control auth-input" @bind-Value="_model.Name" />
+                                <ValidationMessage For="() => _model.Name" class="text-danger small" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label auth-label" for="Noticiero_City">Ciudad</label>
+                                <InputText id="Noticiero_City" class="form-control auth-input" @bind-Value="_model.City" />
+                                <ValidationMessage For="() => _model.City" class="text-danger small" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label auth-label" for="Noticiero_Email">Correo de contacto</label>
+                                <InputText id="Noticiero_Email" class="form-control auth-input" @bind-Value="_model.ContactEmail" />
+                                <ValidationMessage For="() => _model.ContactEmail" class="text-danger small" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label auth-label" for="Noticiero_Phone">Teléfono de contacto</label>
+                                <InputText id="Noticiero_Phone" class="form-control auth-input" @bind-Value="_model.ContactPhone" />
+                                <ValidationMessage For="() => _model.ContactPhone" class="text-danger small" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-check-label small">
+                                    <InputCheckbox class="form-check-input me-1" @bind-Value="_model.IsActive" />
+                                    Noticiero activo
+                                </label>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary auth-submit" disabled="@_isSaving">
+                                    @(_isEditing ? "Guardar cambios" : "Guardar noticiero")
+                                </button>
+                                @if (_isEditing)
+                                {
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="NewNoticiero">
+                                        Cancelar
+                                    </button>
+                                }
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-7">
+                <div class="card shadow-sm border-0 admin-article-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">Listado de Noticieros</h5>
+                            <span class="small text-muted">Total: @_noticieros.Count</span>
+                        </div>
+
+                        @if (_loading)
+                        {
+                            <div class="text-center py-5">
+                                <div class="spinner-border" role="status"></div>
+                            </div>
+                        }
+                        else if (!_noticieros.Any())
+                        {
+                            <div class="alert alert-info small mb-0">
+                                No hay noticieros registrados.
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead>
+                                        <tr class="small text-muted">
+                                            <th style="width: 5%;">#</th>
+                                            <th>Nombre</th>
+                                            <th>Ciudad</th>
+                                            <th>Contacto</th>
+                                            <th style="width: 12%;">Estado</th>
+                                            <th style="width: 26%;">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var n in _noticieros)
+                                        {
+                                            <tr>
+                                                <td>@n.Id</td>
+                                                <td>@n.Name</td>
+                                                <td>@n.City</td>
+                                                <td>
+                                                    <div class="small">
+                                                        @if (!string.IsNullOrWhiteSpace(n.ContactEmail))
+                                                        {
+                                                            <div>@n.ContactEmail</div>
+                                                        }
+                                                        @if (!string.IsNullOrWhiteSpace(n.ContactPhone))
+                                                        {
+                                                            <div>@n.ContactPhone</div>
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    @if (n.IsActive)
+                                                    {
+                                                        <span class="badge bg-success rounded-pill small">Activo</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-secondary rounded-pill small">Inactivo</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex flex-wrap gap-2">
+                                                        <button type="button" class="btn btn-warning btn-sm" @onclick="() => EditNoticiero(n.Id)">
+                                                            Editar
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="() => ToggleActive(n.Id)">
+                                                            @(n.IsActive ? "Desactivar" : "Activar")
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private List<Noticiero> _noticieros = new List<Noticiero>();
+    private NoticieroFormModel _model = new NoticieroFormModel();
+    private bool _isEditing;
+    private bool _loading = true;
+    private bool _isSaving;
+    private string? _statusMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadNoticieros();
+        _loading = false;
+    }
+
+    private async Task LoadNoticieros()
+    {
+        _noticieros = await Db.Noticieros
+            .OrderByDescending(n => n.IsActive)
+            .ThenBy(n => n.Name)
+            .ToListAsync();
+    }
+
+    private void NewNoticiero()
+    {
+        _model = new NoticieroFormModel();
+        _isEditing = false;
+        _statusMessage = null;
+    }
+
+    private async Task SaveNoticiero()
+    {
+        _isSaving = true;
+        _statusMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_model.Name))
+        {
+            _isSaving = false;
+            return;
+        }
+
+        if (_isEditing)
+        {
+            var entity = await Db.Noticieros.FindAsync(_model.Id);
+            if (entity != null)
+            {
+                entity.Name = _model.Name.Trim();
+                entity.City = _model.City.Trim();
+                entity.ContactEmail = _model.ContactEmail.Trim();
+                entity.ContactPhone = _model.ContactPhone.Trim();
+                entity.IsActive = _model.IsActive;
+            }
+        }
+        else
+        {
+            var entity = new Noticiero
+            {
+                Name = _model.Name.Trim(),
+                City = _model.City.Trim(),
+                ContactEmail = _model.ContactEmail.Trim(),
+                ContactPhone = _model.ContactPhone.Trim(),
+                IsActive = _model.IsActive
+            };
+            Db.Noticieros.Add(entity);
+        }
+
+        await Db.SaveChangesAsync();
+        await LoadNoticieros();
+        _statusMessage = "Cambios guardados correctamente.";
+        _isSaving = false;
+        _isEditing = false;
+        _model = new NoticieroFormModel();
+    }
+
+    private async Task EditNoticiero(int id)
+    {
+        var entity = await Db.Noticieros.FindAsync(id);
+        if (entity == null)
+            return;
+
+        _model = new NoticieroFormModel
+        {
+            Id = entity.Id,
+            Name = entity.Name,
+            City = entity.City,
+            ContactEmail = entity.ContactEmail,
+            ContactPhone = entity.ContactPhone,
+            IsActive = entity.IsActive
+        };
+        _isEditing = true;
+        _statusMessage = null;
+    }
+
+    private async Task ToggleActive(int id)
+    {
+        var entity = await Db.Noticieros.FindAsync(id);
+        if (entity == null)
+            return;
+
+        entity.IsActive = !entity.IsActive;
+        await Db.SaveChangesAsync();
+        await LoadNoticieros();
+    }
+
+    private sealed class NoticieroFormModel
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(150)]
+        public string Name { get; set; } = "";
+
+        [Required]
+        [StringLength(100)]
+        public string City { get; set; } = "";
+
+        [Required]
+        [EmailAddress]
+        [StringLength(150)]
+        public string ContactEmail { get; set; } = "";
+
+        [Required]
+        [StringLength(30)]
+        public string ContactPhone { get; set; } = "";
+
+        public bool IsActive { get; set; } = true;
+    }
+}
