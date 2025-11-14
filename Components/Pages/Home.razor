@@ -1,94 +1,411 @@
 ﻿@page "/"
+@rendermode InteractiveServer
 
-<PageTitle>Diario Magna</PageTitle>
+@using DiarioMagna.Data
+@using DiarioMagna.Domain.Models
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext Db
+@inject NavigationManager Navigation
 
-<section class="bg-dark text-white py-4 mb-4">
+<section class="admin-hero">
     <div class="container">
-        <h1 class="h3 mb-1">Diario Magna Publicadora</h1>
-        <div class="small">
-            Sistema de gestión de artículos entre Secretaría, Relaciones Públicas y Encargado del Sistema.
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="d-flex align-items-center">
+                <div class="admin-hero-icon me-3">
+                    <span class="fs-2">📰</span>
+                </div>
+                <div>
+                    <h1 class="h4 mb-1 text-white">
+                        @HeaderTitle
+                    </h1>
+                    <div class="small text-white-50">
+                        @HeaderSubtitle
+                    </div>
+                </div>
+            </div>
+
+            @if (IsAuthenticated)
+            {
+                <div class="d-flex flex-column flex-sm-row gap-2">
+                    @if (IsSecretaria || IsAdmin)
+                    {
+                        <button class="btn btn-light btn-sm" @onclick="@(() => Navigation.NavigateTo("/articles/create"))">
+                            Crear artículo
+                        </button>
+                    }
+                    @if (IsRelaciones || IsAdmin)
+                    {
+                        <button class="btn btn-outline-light btn-sm" @onclick="@(() => Navigation.NavigateTo("/admin/solicitudes"))">
+                            Panel de solicitudes
+                        </button>
+                    }
+                    @if (IsEncargado || IsAdmin)
+                    {
+                        <button class="btn btn-outline-light btn-sm" @onclick="@(() => Navigation.NavigateTo("/admin/envios"))">
+                            Panel de envíos
+                        </button>
+                    }
+                </div>
+            }
         </div>
     </div>
 </section>
 
-<div class="container mb-5">
-    <AuthorizeView>
-        <Authorized Context="userContext">
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <AuthorizeView Roles="Secretaria,RelacionesPublicas">
-                        <Authorized Context="secretariaContext">
-                            <div class="card border-0 shadow-sm h-100">
-                                <div class="card-body d-flex flex-column">
-                                    <h5 class="card-title">Crear Artículo</h5>
-                                    <p class="card-text small flex-grow-1">
-                                        Puede redactar noticias y enviarlas para revisión.
-                                    </p>
-                                    <a href="articles/create" class="btn btn-primary btn-sm mt-2">
-                                        Ir a Crear Artículo
-                                    </a>
-                                </div>
-                            </div>
-                        </Authorized>
-                    </AuthorizeView>
-                </div>
-
-                <div class="col-md-4">
-                    <AuthorizeView Roles="RelacionesPublicas">
-                        <Authorized Context="rpContext">
-                            <div class="card border-0 shadow-sm h-100">
-                                <div class="card-body d-flex flex-column">
-                                    <h5 class="card-title">Relaciones Públicas</h5>
-                                    <p class="card-text small flex-grow-1">
-                                        Revisar, editar, aprobar o rechazar los artículos enviados por Secretaría.
-                                    </p>
-                                    <a href="admin/solicitudes" class="btn btn-primary btn-sm mt-2">
-                                        Ir al panel de solicitudes
-                                    </a>
-                                </div>
-                            </div>
-                        </Authorized>
-                    </AuthorizeView>
-                </div>
-
-                <div class="col-md-4">
-                    <AuthorizeView Roles="EncargadoSistema">
-                        <Authorized Context="encargadoContext">
-                            <div class="card border-0 shadow-sm h-100">
-                                <div class="card-body d-flex flex-column">
-                                    <h5 class="card-title">Encargado del Sistema</h5>
-                                    <p class="card-text small flex-grow-1">
-                                        Seleccionar los noticieros a los que se enviarán los artículos aprobados.
-                                    </p>
-                                    <a href="admin/envios" class="btn btn-primary btn-sm mt-2">
-                                        Ir al panel de envíos
-                                    </a>
-                                </div>
-                            </div>
-                        </Authorized>
-                    </AuthorizeView>
-                </div>
+<section class="admin-list-section">
+    <div class="container">
+        @if (_loading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border" role="status"></div>
             </div>
-        </Authorized>
-        <NotAuthorized>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card border-0 shadow-sm">
+        }
+        else if (!IsAuthenticated)
+        {
+            <div class="row g-4">
+                <div class="col-12 col-lg-7">
+                    <div class="card shadow-sm border-0 admin-article-card">
                         <div class="card-body">
-                            <h5 class="card-title">Bienvenido a Diario Magna</h5>
-                            <p class="card-text small">
-                                Inicie sesión o regístrese para poder utilizar el flujo completo de creación, revisión y envío de noticias.
+                            <h5 class="mb-3">Bienvenido a Diario Magna</h5>
+                            <p class="mb-2">
+                                Plataforma para gestionar el flujo completo de noticias:
+                                creación, revisión, aprobación y envío a noticieros.
                             </p>
-                            <a href="Account/Login" class="btn btn-primary btn-sm me-2">
-                                Iniciar sesión
-                            </a>
-                            <a href="Account/Register" class="btn btn-outline-secondary btn-sm">
-                                Registrarse
-                            </a>
+                            <ul class="mb-3 small">
+                                <li>Secretaría registra y envía las noticias.</li>
+                                <li>Relaciones Públicas revisa y aprueba el contenido.</li>
+                                <li>Encargado del sistema selecciona los noticieros de destino.</li>
+                                <li>Administrador supervisa todo el proceso.</li>
+                            </ul>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button class="btn btn-primary btn-sm" @onclick="@(() => Navigation.NavigateTo("/Account/Login"))">
+                                    Iniciar sesión
+                                </button>
+                                <button class="btn btn-outline-primary btn-sm" @onclick="@(() => Navigation.NavigateTo("/Account/Register"))">
+                                    Registrarse
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-5">
+                    <div class="card shadow-sm border-0 admin-article-card">
+                        <div class="card-body">
+                            <h6 class="mb-3">Estado general</h6>
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <div class="home-stat-card">
+                                        <div class="small text-muted">Artículos</div>
+                                        <div class="fs-4 fw-semibold">@_totalArticles</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="home-stat-card">
+                                        <div class="small text-muted">Noticieros</div>
+                                        <div class="fs-4 fw-semibold">@_totalNoticieros</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="home-stat-card">
+                                        <div class="small text-muted">Pendientes</div>
+                                        <div class="fs-4 fw-semibold">@_pendingArticles</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="home-stat-card">
+                                        <div class="small text-muted">Aprobados</div>
+                                        <div class="fs-4 fw-semibold">@_approvedArticles</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </NotAuthorized>
-    </AuthorizeView>
-</div>
+        }
+        else
+        {
+            <div class="row g-4">
+                <div class="col-12 col-xl-8">
+                    @if (IsSecretaria && !IsAdmin && !IsRelaciones && !IsEncargado)
+                    {
+                        <div class="card shadow-sm border-0 admin-article-card mb-3">
+                            <div class="card-body">
+                                <h5 class="mb-3">Flujo del artículo</h5>
+                                <ol class="small mb-0">
+                                    <li>Secretaría crea y envía la noticia.</li>
+                                    <li>Relaciones Públicas revisa y aprueba.</li>
+                                    <li>Encargado del sistema selecciona los noticieros.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    }
+                    else if (IsRelaciones && !IsAdmin)
+                    {
+                        <div class="card shadow-sm border-0 admin-article-card mb-3">
+                            <div class="card-body">
+                                <h5 class="mb-3">Trabajo de revisión</h5>
+                                <p class="small mb-2">
+                                    Gestiona las noticias pendientes, mantén la calidad editorial
+                                    y deja listas las publicaciones para su envío a los medios.
+                                </p>
+                                <ul class="small mb-0">
+                                    <li>Revisa contenido y redacción.</li>
+                                    <li>Aprobar o rechazar artículos.</li>
+                                    <li>Deja comentarios internos al equipo si es necesario.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                    else if (IsEncargado && !IsAdmin)
+                    {
+                        <div class="card shadow-sm border-0 admin-article-card mb-3">
+                            <div class="card-body">
+                                <h5 class="mb-3">Gestión de envíos</h5>
+                                <p class="small mb-2">
+                                    Desde este módulo puedes decidir a qué noticieros se envía cada noticia aprobada.
+                                </p>
+                                <ul class="small mb-0">
+                                    <li>Selecciona noticieros por artículo.</li>
+                                    <li>Actualiza los envíos en cualquier momento.</li>
+                                    <li>Mantén el catálogo de noticieros siempre actualizado.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                    else if (IsAdmin)
+                    {
+                        <div class="card shadow-sm border-0 admin-article-card mb-3">
+                            <div class="card-body">
+                                <h5 class="mb-3">Resumen del sistema</h5>
+                                <p class="small mb-2">
+                                    Visualiza el comportamiento general de la plataforma y accede rápidamente
+                                    a los módulos principales.
+                                </p>
+                                <ul class="small mb-0">
+                                    <li>Supervisa el volumen de noticias por estado.</li>
+                                    <li>Administra usuarios y roles desde el módulo de identidad.</li>
+                                    <li>Coordina el trabajo entre secretaría, relaciones públicas y sistema.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="card shadow-sm border-0 admin-article-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">
+                                    Últimos artículos
+                                </h5>
+                                <button class="btn btn-link btn-sm text-decoration-none"
+                                        @onclick="@(() => Navigation.NavigateTo("/mis-articulos"))">
+                                    Ver todos
+                                </button>
+                            </div>
+
+                            @if (!_lastArticles.Any())
+                            {
+                                <div class="small text-muted">
+                                    Aún no hay artículos registrados.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="list-group list-group-flush">
+                                    @foreach (var a in _lastArticles)
+                                    {
+                                        <div class="list-group-item px-0">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <div class="fw-semibold">@a.Title</div>
+                                                    <div class="small text-muted">
+                                                        @a.AuthorName · @a.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                                    </div>
+                                                </div>
+                                                <span class="badge @GetStatusBadgeClass(a.Status)">
+                                                    @a.Status
+                                                </span>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-xl-4">
+                    <div class="card shadow-sm border-0 admin-article-card mb-3">
+                        <div class="card-body">
+                            <h6 class="mb-3">Indicadores</h6>
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <div class="home-stat-card">
+                                        <div class="small text-muted">Artículos</div>
+                                        <div class="fs-4 fw-semibold">@_totalArticles</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="home-stat-card">
+                                        <div class="small text-muted">Noticieros</div>
+                                        <div class="fs-4 fw-semibold">@_totalNoticieros</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="home-stat-card">
+                                        <div class="small text-muted">Pendientes</div>
+                                        <div class="fs-4 fw-semibold">@_pendingArticles</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="home-stat-card">
+                                        <div class="small text-muted">Aprobados</div>
+                                        <div class="fs-4 fw-semibold">@_approvedArticles</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (IsSecretaria || IsRelaciones || IsEncargado || IsAdmin)
+                    {
+                        <div class="card shadow-sm border-0 admin-article-card">
+                            <div class="card-body">
+                                <h6 class="mb-3">Accesos rápidos</h6>
+                                <div class="d-grid gap-2">
+                                    @if (IsSecretaria || IsAdmin)
+                                    {
+                                        <button class="btn btn-primary btn-sm"
+                                                @onclick="@(() => Navigation.NavigateTo("/articles/create"))">
+                                            Crear nuevo artículo
+                                        </button>
+                                    }
+                                    @if (IsRelaciones || IsAdmin)
+                                    {
+                                        <button class="btn btn-outline-primary btn-sm"
+                                                @onclick="@(() => Navigation.NavigateTo("/admin/solicitudes"))">
+                                            Revisar artículos pendientes
+                                        </button>
+                                    }
+                                    @if (IsEncargado || IsAdmin)
+                                    {
+                                        <button class="btn btn-outline-primary btn-sm"
+                                                @onclick="@(() => Navigation.NavigateTo("/admin/envios"))">
+                                            Gestionar envíos a noticieros
+                                        </button>
+                                        <button class="btn btn-outline-secondary btn-sm"
+                                                @onclick="@(() => Navigation.NavigateTo("/admin/noticieros"))">
+                                            Administrar noticieros
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
+
+    private bool _loading = true;
+
+    private bool IsAuthenticated;
+    private bool IsAdmin;
+    private bool IsSecretaria;
+    private bool IsRelaciones;
+    private bool IsEncargado;
+
+    private string HeaderTitle = "Diario Magna · Sistema de flujo de noticias";
+    private string HeaderSubtitle = "Inicia sesión para acceder a las funcionalidades del sistema";
+
+    private int _totalArticles;
+    private int _pendingArticles;
+    private int _approvedArticles;
+    private int _totalNoticieros;
+
+    private List<LastArticleItem> _lastArticles = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateTask;
+        var user = authState.User;
+
+        IsAuthenticated = user.Identity?.IsAuthenticated ?? false;
+
+        if (IsAuthenticated)
+        {
+            IsAdmin = user.IsInRole("Administrador");
+            IsSecretaria = user.IsInRole("Secretaria");
+            IsRelaciones = user.IsInRole("RelacionesPublicas");
+            IsEncargado = user.IsInRole("EncargadoSistema");
+
+            var name = user.Identity?.Name ?? "";
+            HeaderTitle = "Bienvenido a Diario Magna";
+            if (IsAdmin)
+                HeaderSubtitle = $"Panel general del sistema · {name}";
+            else if (IsRelaciones)
+                HeaderSubtitle = $"Panel de revisión de noticias · {name}";
+            else if (IsEncargado)
+                HeaderSubtitle = $"Panel de envíos y noticieros · {name}";
+            else if (IsSecretaria)
+                HeaderSubtitle = $"Panel de creación de noticias · {name}";
+            else
+                HeaderSubtitle = name;
+        }
+
+        _totalArticles = await Db.Articles.CountAsync();
+        _pendingArticles = await Db.Articles.CountAsync(a => a.Status == ArticleStatus.PendingReview);
+        _approvedArticles = await Db.Articles.CountAsync(a => a.Status == ArticleStatus.Approved);
+        _totalNoticieros = await Db.Noticieros.CountAsync();
+
+        IQueryable<Article> lastQuery = Db.Articles
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(5);
+
+        if (IsSecretaria && !IsAdmin && !IsRelaciones && !IsEncargado)
+        {
+            var email = user.Identity?.Name ?? "";
+            lastQuery = Db.Articles
+                .Where(a => a.AuthorEmail == email)
+                .OrderByDescending(a => a.CreatedAt)
+                .Take(5);
+        }
+
+        var list = await lastQuery.ToListAsync();
+
+        _lastArticles = list.Select(a => new LastArticleItem
+        {
+            Id = a.Id,
+            Title = a.Title,
+            AuthorName = a.AuthorName,
+            CreatedAt = a.CreatedAt,
+            Status = a.Status
+        }).ToList();
+
+        _loading = false;
+    }
+
+    private string GetStatusBadgeClass(ArticleStatus status)
+    {
+        return status switch
+        {
+            ArticleStatus.Approved => "bg-success",
+            ArticleStatus.Rejected => "bg-danger",
+            ArticleStatus.PendingReview => "bg-warning text-dark",
+            _ => "bg-secondary"
+        };
+    }
+
+    private sealed class LastArticleItem
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string AuthorName { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+        public ArticleStatus Status { get; set; }
+    }
+}

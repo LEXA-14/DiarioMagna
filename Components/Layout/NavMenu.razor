@@ -1,116 +1,125 @@
-﻿@implements IDisposable
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager Navigation
 
-@inject NavigationManager NavigationManager
+<div class="sidebar-layout">
+    <div class="sidebar-header">
+        <div class="sidebar-logo">
+            <span class="fs-4 text-white">📰</span>
+        </div>
+        <div class="sidebar-title">
+            <div class="text-white fw-semibold">Diario Magna</div>
+            <div class="text-white-50 small">Plataforma de gestión de noticias</div>
+        </div>
+    </div>
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid d-flex justify-content-between align-items-center">
-        <a class="navbar-brand" href="">DiarioMagna</a>
-        <span class="navbar-text d-none d-sm-inline text-light small">
-            Plataforma de gestión de noticias
-        </span>
+    <div class="sidebar-menu">
+        <nav class="nav flex-column">
+
+            <NavLink class="nav-link sidebar-link" href="/" Match="NavLinkMatch.All">
+                <span class="me-2 bi bi-house-door-fill-nav-menu"></span>
+                <span>Inicio</span>
+            </NavLink>
+
+            @if (IsAuthenticated)
+            {
+                @if (IsSecretaria || IsAdmin)
+                {
+                    <NavLink class="nav-link sidebar-link" href="/articles/create">
+                        <span class="me-2 bi bi-file-earmark-plus"></span>
+                        <span>Crear artículo</span>
+                    </NavLink>
+                }
+
+                @if (IsRelaciones || IsSecretaria || IsEncargado || IsAdmin)
+                {
+                    <NavLink class="nav-link sidebar-link" href="/mis-articulos">
+                        <span class="me-2 bi bi-journal-text"></span>
+                        <span>Mis artículos</span>
+                    </NavLink>
+                }
+
+                @if (IsRelaciones || IsAdmin)
+                {
+                    <NavLink class="nav-link sidebar-link" href="/admin/solicitudes">
+                        <span class="me-2 bi bi-inboxes"></span>
+                        <span>Panel de solicitudes</span>
+                    </NavLink>
+                }
+
+                @if (IsEncargado || IsAdmin)
+                {
+                    <NavLink class="nav-link sidebar-link" href="/admin/envios">
+                        <span class="me-2 bi bi-send-check"></span>
+                        <span>Panel de envíos</span>
+                    </NavLink>
+
+                    <NavLink class="nav-link sidebar-link" href="/admin/noticieros">
+                        <span class="me-2 bi bi-broadcast-pin"></span>
+                        <span>Noticieros</span>
+                    </NavLink>
+                }
+            }
+        </nav>
+    </div>
+
+    <div class="sidebar-footer">
+        @if (IsAuthenticated)
+        {
+            <form action="/app/logout" method="post" class="mt-2">
+                <AntiforgeryToken />
+                <button type="submit" class="btn btn-outline-light btn-sm w-100">
+                    Cerrar sesión
+                </button>
+            </form>
+        }
+        else
+        {
+            <div class="d-grid gap-2">
+                <NavLink class="btn btn-light btn-sm" href="/Account/Login">
+                    Iniciar sesión
+                </NavLink>
+                <NavLink class="btn btn-outline-light btn-sm" href="/Account/Register">
+                    Registrarse
+                </NavLink>
+            </div>
+        }
     </div>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Inicio
-            </NavLink>
-        </div>
-
-        <AuthorizeView Roles="Secretaria,RelacionesPublicas">
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="articles/create">
-                        <span class="bi bi-plus-circle-nav-menu"></span> Crear Artículo
-                    </NavLink>
-                </div>
-            </Authorized>
-        </AuthorizeView>
-
-        <AuthorizeView Roles="RelacionesPublicas">
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="admin/solicitudes">
-                        <span class="bi bi-journal-text-nav-menu" aria-hidden="true"></span> Panel de Solicitudes
-                    </NavLink>
-                </div>
-            </Authorized>
-        </AuthorizeView>
-        <AuthorizeView Roles="EncargadoSistema,Administrador">
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="admin/noticieros">
-                        <span class="bi bi-broadcast-pin-nav-menu" aria-hidden="true"></span> Noticieros
-                    </NavLink>
-                </div>
-            </Authorized>
-        </AuthorizeView>
-
-
-        <AuthorizeView Roles="EncargadoSistema">
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="admin/envios">
-                        <span class="bi bi-send-check-fill-nav-menu" aria-hidden="true"></span> Panel de Envíos
-                    </NavLink>
-                </div>
-            </Authorized>
-        </AuthorizeView>
-
-        <AuthorizeView>
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Manage">
-                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @context.User.Identity?.Name
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <form action="Account/Logout" method="post">
-                        <AntiforgeryToken />
-                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                        <button type="submit" class="nav-link">
-                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
-                        </button>
-                    </form>
-                </div>
-            </Authorized>
-            <NotAuthorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Register">
-                        <span class="bi bi-person-nav-menu" aria-hidden="true"></span> Registrarse
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Login">
-                        <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Iniciar sesión
-                    </NavLink>
-                </div>
-            </NotAuthorized>
-        </AuthorizeView>
-    </nav>
-</div>
-
 @code {
-    private string? currentUrl;
+    [CascadingParameter] private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
 
-    protected override void OnInitialized()
-    {
-        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        NavigationManager.LocationChanged += OnLocationChanged;
-    }
+    private bool IsAuthenticated;
+    private bool IsAdmin;
+    private bool IsSecretaria;
+    private bool IsRelaciones;
+    private bool IsEncargado;
+    private string UserName = "";
+    private string UserRolesText = "";
 
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    protected override async Task OnInitializedAsync()
     {
-        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
-        StateHasChanged();
-    }
+        var authState = await AuthStateTask;
+        var user = authState.User;
 
-    public void Dispose()
-    {
-        NavigationManager.LocationChanged -= OnLocationChanged;
+        IsAuthenticated = user.Identity?.IsAuthenticated ?? false;
+
+        if (!IsAuthenticated)
+            return;
+
+        IsAdmin = user.IsInRole("Administrador");
+        IsSecretaria = user.IsInRole("Secretaria");
+        IsRelaciones = user.IsInRole("RelacionesPublicas");
+        IsEncargado = user.IsInRole("EncargadoSistema");
+
+        UserName = user.Identity?.Name ?? "";
+
+        var roles = new List<string>();
+        if (IsAdmin) roles.Add("Administrador");
+        if (IsSecretaria) roles.Add("Secretaría");
+        if (IsRelaciones) roles.Add("Relaciones Públicas");
+        if (IsEncargado) roles.Add("Encargado del sistema");
+
+        UserRolesText = string.Join(" · ", roles);
     }
 }

@@ -1,7 +1,6 @@
-﻿@page "/articles/{id:int}"
-@page "/articles/details/{id:int}"
+﻿@page "/admin/envios"
 @rendermode InteractiveServer
-@attribute [Authorize(Roles = "Secretaria,RelacionesPublicas,EncargadoSistema,Administrador")]
+@attribute [Authorize(Roles = "EncargadoSistema,Administrador")]
 
 @using DiarioMagna.Data
 @using DiarioMagna.Domain.Models
@@ -14,17 +13,12 @@
         <div class="d-flex justify-content-between align-items-start mb-3">
             <div class="d-flex align-items-center">
                 <div class="admin-hero-icon me-3">
-                    <span class="fs-2">📄</span>
+                    <span class="fs-2">📡</span>
                 </div>
                 <div>
-                    <h1 class="h4 mb-1 text-white">Detalle del Artículo</h1>
-                    <div class="small text-white-50">Visualización completa de la noticia</div>
+                    <h1 class="h4 mb-1 text-white">Panel de Envíos</h1>
+                    <div class="small text-white-50">Selecciona los noticieros a los que se enviará cada artículo aprobado</div>
                 </div>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-outline-light btn-sm" @onclick="GoBack">
-                    Volver al panel
-                </button>
             </div>
         </div>
     </div>
@@ -38,170 +32,270 @@
                 <div class="spinner-border" role="status"></div>
             </div>
         }
-        else if (_notFound)
+        else if (!_noticieros.Any())
         {
-            <div class="alert alert-danger">
-                No se encontró el artículo solicitado.
+            <div class="alert alert-warning">
+                No hay noticieros activos configurados. Registre al menos un noticiero para poder realizar envíos.
+            </div>
+        }
+        else if (!_articles.Any())
+        {
+            <div class="alert alert-info">
+                No hay artículos aprobados para enviar.
             </div>
         }
         else
         {
-            <div class="row g-4">
-                <div class="col-12 col-lg-4">
-                    <div class="card shadow-sm border-0 admin-article-card mb-3">
-                        <div class="card-body">
-                            <h5 class="card-title mb-2">Información general</h5>
-                            <div class="small mb-1">
-                                <span class="fw-semibold">Autor:</span> @_model.AuthorName
-                            </div>
-                            <div class="small mb-1">
-                                <span class="fw-semibold">Correo:</span> @_model.AuthorEmail
-                            </div>
-                            <div class="small mb-1">
-                                <span class="fw-semibold">Fecha de creación:</span>
-                                @_model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
-                            </div>
-                            <div class="small mb-1">
-                                <span class="fw-semibold">Categoría:</span> @_model.CategoryName
-                            </div>
-                            @if (!string.IsNullOrWhiteSpace(_model.PlanName))
-                            {
-                                <div class="small mb-1">
-                                    <span class="fw-semibold">Plan:</span> @_model.PlanName
-                                </div>
-                            }
-                            <div class="small mb-1">
-                                <span class="fw-semibold">Estado:</span>
-                                <span class="badge @GetStatusBadgeClass(_model.Status)">
-                                    @_model.Status
-                                </span>
-                            </div>
-                            @if (!string.IsNullOrWhiteSpace(_model.ReferenceTitle))
-                            {
-                                <div class="small mt-2">
-                                    <span class="fw-semibold">Referencia:</span>
-                                    @if (_model.ReferenceArticleId.HasValue)
-                                    {
-                                        <a href="@GetDetailsUrl(_model.ReferenceArticleId.Value)">
-                                            @_model.ReferenceTitle
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <span>@_model.ReferenceTitle</span>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    </div>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="small text-muted">
+                    Artículos aprobados: @_articles.Count
                 </div>
-
-                <div class="col-12 col-lg-8">
-                    <div class="card shadow-sm border-0 admin-article-card">
-                        <div class="card-body">
-                            <h2 class="h4 mb-3">@_model.Title</h2>
-
-                            @if (!string.IsNullOrWhiteSpace(_model.AttachmentPath))
-                            {
-                                <div class="mb-3 text-center">
-                                    <img src="@_model.AttachmentPath"
-                                         class="img-fluid rounded"
-                                         style="max-height: 320px; object-fit: cover;"
-                                         alt="Imagen del artículo" />
-                                </div>
-                            }
-
-                        <div class="article-content-text">
-                            @(_model.Content?.Replace("\n", "<br />") is string html
-                                                        ? (MarkupString)html
-                                                        : (MarkupString)string.Empty)
-                        </div>
-                    </div>
+                <div class="small text-muted">
+                    Noticieros activos: @_noticieros.Count
                 </div>
             </div>
-        </div>
+
+            <div class="row g-3">
+                @foreach (var item in _articles)
+                {
+                    <div class="col-12">
+                        <div class="card shadow-sm border-0 admin-article-card">
+                            <div class="card-body">
+                                <div class="d-flex flex-column flex-md-row gap-3">
+                                    <div class="envio-thumb">
+                                        @if (!string.IsNullOrWhiteSpace(item.AttachmentPath))
+                                        {
+                                            <img src="@item.AttachmentPath"
+                                                 class="img-fluid rounded"
+                                                 style="max-height: 120px; object-fit: cover; min-width: 160px;"
+                                                 alt="Imagen del artículo" />
+                                        }
+                                        else
+                                        {
+                                            <div class="d-flex align-items-center justify-content-center bg-light rounded"
+                                                 style="height: 120px; min-width: 160px;">
+                                                <span class="text-muted small">Sin imagen</span>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <h5 class="mb-1">@item.Title</h5>
+                                                <div class="small text-muted">
+                                                    @item.AuthorName · @item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                                </div>
+                                                <div class="small text-muted">
+                                                    Categoría: @item.CategoryName
+                                                    @if (!string.IsNullOrWhiteSpace(item.PlanName))
+                                                    {
+                                                        <span> · Plan: @item.PlanName</span>
+                                                    }
+                                                </div>
+                                                <div class="small mt-1">
+                                                    <span class="fw-semibold">Envíos actuales:</span>
+                                                    @if (item.Noticieros.Count(n => n.Selected) == 0)
+                                                    {
+                                                        <span class="text-muted">Sin envíos</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-success">
+                                                            @item.Noticieros.Count(n => n.Selected) noticiero(s)
+                                                        </span>
+                                                    }
+                                                </div>
+                                            </div>
+                                            <div class="d-flex flex-column gap-2">
+                                                <button class="btn btn-outline-primary btn-sm"
+                                                        @onclick="@(() => ViewArticle(item.Id))">
+                                                    Ver artículo completo
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <div class="small fw-semibold mb-1">
+                                                Selecciona los noticieros de destino
+                                            </div>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                @foreach (var n in item.Noticieros)
+                                                {
+                                                    <div class="form-check form-check-inline envio-noticiero-chip">
+                                                        <input class="form-check-input"
+                                                               type="checkbox"
+                                                               id="@($"art{item.Id}-not{n.Id}")"
+                                                               checked="@n.Selected"
+                                                               @onchange="e => ToggleNoticiero(item, n.Id, e)" />
+                                                        <label class="form-check-label small" for="@($"art{item.Id}-not{n.Id}")">
+                                                            @n.Name
+                                                        </label>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex justify-content-end mt-3">
+                                            <button class="btn btn-primary btn-sm"
+                                                    disabled="@item.Saving"
+                                                    @onclick="() => SaveEnvios(item)">
+                                                @(item.Saving ? "Guardando..." : "Guardar envíos")
+                                            </button>
+                                        </div>
+
+                                        @if (!string.IsNullOrWhiteSpace(item.Message))
+                                        {
+                                            <div class="small text-success mt-2">
+                                                @item.Message
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 }
+            </div>
+        }
     </div>
 </section>
 
 @code {
-    [Parameter] public int Id { get; set; }
-
-    private ArticleDetailsModel _model = new ArticleDetailsModel();
+    private List<NoticieroItem> _noticieros = new();
+    private List<ArticleEnvioItem> _articles = new();
     private bool _loading = true;
-    private bool _notFound;
 
     protected override async Task OnInitializedAsync()
     {
-        var article = await Db.Articles
+        var noticieros = await Db.Noticieros
+            .Where(n => n.IsActive)
+            .OrderBy(n => n.Name)
+            .ToListAsync();
+
+        _noticieros = noticieros
+            .Select(n => new NoticieroItem
+            {
+                Id = n.Id,
+                Name = n.Name
+            })
+            .ToList();
+
+        var articles = await Db.Articles
             .Include(a => a.Category)
             .Include(a => a.Plan)
-            .FirstOrDefaultAsync(a => a.Id == Id);
+            .Include(a => a.ArticleNoticieros)
+            .ThenInclude(an => an.Noticiero)
+            .Where(a => a.Status == ArticleStatus.Approved)
+            .OrderByDescending(a => a.CreatedAt)
+            .ToListAsync();
 
-        if (article == null)
+        foreach (var a in articles)
         {
-            _notFound = true;
-            _loading = false;
-            return;
+            var item = new ArticleEnvioItem
+            {
+                Id = a.Id,
+                Title = a.Title,
+                AuthorName = a.AuthorName,
+                CreatedAt = a.CreatedAt,
+                CategoryName = a.Category?.Name ?? "General",
+                PlanName = a.Plan?.Name,
+                AttachmentPath = a.AttachmentPath,
+                Noticieros = _noticieros
+                    .Select(n => new NoticieroSelection
+                    {
+                        Id = n.Id,
+                        Name = n.Name,
+                        Selected = a.ArticleNoticieros.Any(an => an.NoticieroId == n.Id)
+                    })
+                    .ToList()
+            };
+
+            _articles.Add(item);
         }
-
-        var reference = await Db.ArticleReferences
-            .Include(r => r.ReferencedArticle)
-            .FirstOrDefaultAsync(r => r.ArticleId == article.Id);
-
-        _model = new ArticleDetailsModel
-        {
-            Id = article.Id,
-            Title = article.Title,
-            Content = article.Content,
-            AuthorName = article.AuthorName,
-            AuthorEmail = article.AuthorEmail,
-            CreatedAt = article.CreatedAt,
-            CategoryName = article.Category?.Name ?? "General",
-            PlanName = article.Plan?.Name,
-            Status = article.Status,
-            AttachmentPath = article.AttachmentPath,
-            ReferenceArticleId = reference?.ReferencedArticleId,
-            ReferenceTitle = reference?.ReferencedArticle?.Title
-        };
 
         _loading = false;
     }
 
-    private void GoBack()
+    private void ViewArticle(int articleId)
     {
-        Navigation.NavigateTo("/admin/solicitudes");
+        Navigation.NavigateTo($"/articles/details/{articleId}");
     }
 
-    private string GetStatusBadgeClass(ArticleStatus status)
+    private void ToggleNoticiero(ArticleEnvioItem item, int noticieroId, ChangeEventArgs e)
     {
-        return status switch
+        var selected = e.Value is bool b && b;
+        var target = item.Noticieros.First(n => n.Id == noticieroId);
+        target.Selected = selected;
+        item.Message = null;
+    }
+
+    private async Task SaveEnvios(ArticleEnvioItem item)
+    {
+        item.Saving = true;
+        item.Message = null;
+
+        var entity = await Db.Articles
+            .Include(a => a.ArticleNoticieros)
+            .FirstOrDefaultAsync(a => a.Id == item.Id);
+
+        if (entity == null)
         {
-            ArticleStatus.Approved => "bg-success",
-            ArticleStatus.Rejected => "bg-danger",
-            ArticleStatus.PendingReview => "bg-warning text-dark",
-            _ => "bg-secondary"
-        };
+            item.Saving = false;
+            item.Message = "No se encontró el artículo.";
+            return;
+        }
+
+        foreach (var sel in item.Noticieros)
+        {
+            var existing = entity.ArticleNoticieros
+                .FirstOrDefault(an => an.NoticieroId == sel.Id);
+
+            if (sel.Selected && existing == null)
+            {
+                var nuevo = new ArticleNoticiero
+                {
+                    ArticleId = entity.Id,
+                    NoticieroId = sel.Id
+                };
+                Db.ArticleNoticieros.Add(nuevo);
+            }
+            else if (!sel.Selected && existing != null)
+            {
+                Db.ArticleNoticieros.Remove(existing);
+            }
+        }
+
+        await Db.SaveChangesAsync();
+
+        item.Saving = false;
+        item.Message = "Envíos actualizados correctamente.";
     }
 
-    private string GetDetailsUrl(int articleId)
+    private sealed class NoticieroItem
     {
-        return $"/articles/{articleId}";
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
     }
 
-    private sealed class ArticleDetailsModel
+    private sealed class NoticieroSelection
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public bool Selected { get; set; }
+    }
+
+    private sealed class ArticleEnvioItem
     {
         public int Id { get; set; }
         public string Title { get; set; } = "";
-        public string Content { get; set; } = "";
         public string AuthorName { get; set; } = "";
-        public string AuthorEmail { get; set; } = "";
         public DateTime CreatedAt { get; set; }
         public string CategoryName { get; set; } = "";
         public string? PlanName { get; set; }
-        public ArticleStatus Status { get; set; }
         public string? AttachmentPath { get; set; }
-        public int? ReferenceArticleId { get; set; }
-        public string? ReferenceTitle { get; set; }
+        public List<NoticieroSelection> Noticieros { get; set; } = new();
+        public bool Saving { get; set; }
+        public string? Message { get; set; }
     }
 }
