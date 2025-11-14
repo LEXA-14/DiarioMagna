@@ -1,6 +1,6 @@
 ﻿@page "/articles/edit/{id:int}"
 @rendermode InteractiveServer
-@attribute [Authorize(Roles = "RelacionesPublicas,Administrador")]
+@* @attribute [Authorize(Roles = "RelacionesPublicas,Administrador")] *@
 
 @using System.ComponentModel.DataAnnotations
 @using System.IO
@@ -122,9 +122,9 @@
                                 <div class="mb-3">
                                     <label class="form-label auth-label">Estado</label>
                                     <InputSelect class="form-select" @bind-Value="_model.Status">
-                                        <option value="@ArticleStatus.PendingReview">Pendiente de revisión</option>
-                                        <option value="@ArticleStatus.Approved">Aprobado</option>
-                                        <option value="@ArticleStatus.Rejected">Rechazado</option>
+                                        <option value="@ArticleStatus.Pendiente">Pendiente de revisión</option>
+                                        <option value="@ArticleStatus.Aprobado">Aprobado</option>
+                                        <option value="@ArticleStatus.Rechazado">Rechazado</option>
                                     </InputSelect>
                                 </div>
 

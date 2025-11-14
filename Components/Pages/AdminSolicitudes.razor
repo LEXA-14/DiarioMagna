@@ -1,6 +1,6 @@
 ﻿@page "/admin/solicitudes"
 @rendermode InteractiveServer
-@attribute [Authorize(Roles = "RelacionesPublicas,Administrador")]
+@* @attribute [Authorize(Roles = "RelacionesPublicas,Administrador")] *@
 
 @using DiarioMagna.Data
 @using DiarioMagna.Domain.Models
@@ -17,7 +17,7 @@
                 </div>
                 <div>
                     <h1 class="h4 mb-1 text-white">Panel de Solicitudes</h1>
-                    <div class="small text-white-50">Revisión y aprobación de artículos enviados por la secretaría</div>
+                    
                 </div>
             </div>
         </div>
@@ -50,11 +50,12 @@
                                    placeholder="Buscar por título o autor..." />
                         </div>
                         <div class="col-12 col-md-3">
+
                             <label class="form-label small mb-1">Estado</label>
                             <select class="form-select form-select-sm" @bind="_statusFilter">
-                                <option value="PendingReview">Pendiente de revisión</option>
-                                <option value="Approved">Aprobado</option>
-                                <option value="Rejected">Rechazado</option>
+                                <option value="0">Pendiente de revisión</option>
+                                <option value="1">Aprobado</option>
+                                <option value="2">Rechazado</option>
                                 <option value="Todos">Todos</option>
                             </select>
                         </div>
@@ -95,9 +96,12 @@
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <div>
                                                 <h5 class="mb-1">@item.Title</h5>
+                                                
                                                 <div class="small text-muted">
                                                     @item.AuthorName · @item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
                                                 </div>
+                                                
+                                               
                                                 <div class="small text-muted">
                                                     Categoría: @item.CategoryName
                                                     @if (!string.IsNullOrWhiteSpace(item.PlanName))
@@ -118,6 +122,7 @@
                                         </div>
 
                                         <div class="d-flex flex-wrap gap-2 justify-content-end">
+                                           
                                             <button class="btn btn-outline-secondary btn-sm"
                                                     @onclick="() => ViewArticle(item.Id)">
                                                 Ver artículo
@@ -127,13 +132,13 @@
                                                 Editar
                                             </button>
                                             <button class="btn btn-success btn-sm"
-                                                    disabled="@item.Saving || item.Status == ArticleStatus.Approved"
-                                                    @onclick="() => ChangeStatus(item, ArticleStatus.Approved)">
+                                                    
+                                                    @onclick="() => ChangeStatus(item, ArticleStatus.Aprobado)">
                                                 Aprobar
                                             </button>
                                             <button class="btn btn-danger btn-sm"
-                                                    disabled="@item.Saving || item.Status == ArticleStatus.Rejected"
-                                                    @onclick="() => ChangeStatus(item, ArticleStatus.Rejected)">
+                                                   
+                                                    @onclick="() => ChangeStatus(item, ArticleStatus.Rechazado)">
                                                 Rechazar
                                             </button>
                                         </div>
@@ -159,7 +164,7 @@
     private List<SolicitudItem> _items = new();
     private bool _loading = true;
     private string _search = "";
-    private string _statusFilter = "PendingReview";
+    private string _statusFilter = "1";
 
     protected override async Task OnInitializedAsync()
     {
@@ -212,9 +217,9 @@
     {
         return status switch
         {
-            ArticleStatus.Approved => "bg-success",
-            ArticleStatus.Rejected => "bg-danger",
-            ArticleStatus.PendingReview => "bg-warning text-dark",
+            ArticleStatus.Aprobado => "bg-success",
+            ArticleStatus.Rechazado => "bg-danger",
+            ArticleStatus.Pendiente => "bg-warning text-dark",
             _ => "bg-secondary"
         };
     }
@@ -259,7 +264,7 @@
 
         item.Status = newStatus;
         item.Saving = false;
-        item.Message = newStatus == ArticleStatus.Approved
+        item.Message = newStatus == ArticleStatus.Aprobado
             ? "Artículo aprobado correctamente."
             : "Artículo rechazado correctamente.";
     }

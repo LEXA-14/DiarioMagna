@@ -67,10 +67,7 @@
                     <div class="card shadow-sm border-0 admin-article-card">
                         <div class="card-body">
                             <h5 class="mb-3">Bienvenido a Diario Magna</h5>
-                            <p class="mb-2">
-                                Plataforma para gestionar el flujo completo de noticias:
-                                creación, revisión, aprobación y envío a noticieros.
-                            </p>
+                            
                             <ul class="mb-3 small">
                                 <li>Secretaría registra y envía las noticias.</li>
                                 <li>Relaciones Públicas revisa y aprueba el contenido.</li>
@@ -177,11 +174,8 @@
                     {
                         <div class="card shadow-sm border-0 admin-article-card mb-3">
                             <div class="card-body">
-                                <h5 class="mb-3">Resumen del sistema</h5>
-                                <p class="small mb-2">
-                                    Visualiza el comportamiento general de la plataforma y accede rápidamente
-                                    a los módulos principales.
-                                </p>
+                                <h5 class="mb-3">Administrador del sistema</h5>
+                               
                                 <ul class="small mb-0">
                                     <li>Supervisa el volumen de noticias por estado.</li>
                                     <li>Administra usuarios y roles desde el módulo de identidad.</li>
@@ -358,8 +352,8 @@
         }
 
         _totalArticles = await Db.Articles.CountAsync();
-        _pendingArticles = await Db.Articles.CountAsync(a => a.Status == ArticleStatus.PendingReview);
-        _approvedArticles = await Db.Articles.CountAsync(a => a.Status == ArticleStatus.Approved);
+        _pendingArticles = await Db.Articles.CountAsync(a => a.Status == ArticleStatus.Pendiente);
+        _approvedArticles = await Db.Articles.CountAsync(a => a.Status == ArticleStatus.Aprobado);
         _totalNoticieros = await Db.Noticieros.CountAsync();
 
         IQueryable<Article> lastQuery = Db.Articles
@@ -393,9 +387,9 @@
     {
         return status switch
         {
-            ArticleStatus.Approved => "bg-success",
-            ArticleStatus.Rejected => "bg-danger",
-            ArticleStatus.PendingReview => "bg-warning text-dark",
+            ArticleStatus.Aprobado => "bg-success",
+            ArticleStatus.Rechazado => "bg-danger",
+            ArticleStatus.Pendiente => "bg-warning text-dark",
             _ => "bg-secondary"
         };
     }

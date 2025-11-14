@@ -1,6 +1,6 @@
 ﻿@page "/articles/details/{id:int}"
 @rendermode InteractiveServer
-@attribute [Authorize(Roles = "Secretaria,RelacionesPublicas,EncargadoSistema,Administrador")]
+@* @attribute [Authorize(Roles = "Secretaria,RelacionesPublicas,EncargadoSistema,Administrador")] *@
 
 @using DiarioMagna.Data
 @using DiarioMagna.Domain.Models
@@ -204,9 +204,9 @@
     {
         return status switch
         {
-            ArticleStatus.Approved => "bg-success",
-            ArticleStatus.Rejected => "bg-danger",
-            ArticleStatus.PendingReview => "bg-warning text-dark",
+            ArticleStatus.Aprobado => "bg-success",
+            ArticleStatus.Rechazado => "bg-danger",
+            ArticleStatus.Pendiente => "bg-warning text-dark",
             _ => "bg-secondary"
         };
     }

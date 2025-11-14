@@ -1,6 +1,6 @@
 ﻿@page "/articles/create"
 @rendermode InteractiveServer
-@attribute [Authorize(Roles = "Secretaria,RelacionesPublicas,Administrador")]
+@* @attribute [Authorize(Roles = "Secretaria,RelacionesPublicas,Administrador")] *@
 
 @using System.ComponentModel.DataAnnotations
 @using System.IO
@@ -36,14 +36,7 @@
         <div class="row g-4">
             <div class="col-12 col-lg-4">
                 <div class="card shadow-sm border-0 admin-article-card mb-3">
-                    <div class="card-body">
-                        <h5 class="card-title mb-2">Flujo del Artículo</h5>
-                        <ol class="small text-muted mb-0">
-                            <li>Secretaría crea y envía la noticia.</li>
-                            <li>Relaciones Públicas revisa y aprueba.</li>
-                            <li>Encargado del sistema selecciona noticieros.</li>
-                        </ol>
-                    </div>
+                  
                 </div>
 
                 <div class="card shadow-sm border-0 admin-article-card">
@@ -86,6 +79,15 @@
                                 <label class="form-label auth-label">Título del Artículo</label>
                                 <InputText class="form-control auth-input" @bind-Value="_model.Title" />
                             </div>
+                            <div class="mb-3">
+                                <label class="form-label auth-label">Categoría</label>
+                                <InputSelect class="form-select" @bind-Value="_model.CategoryId">
+                                    @foreach (var cat in _categories)
+                                    {
+                                        <option value="@cat.Id">@cat.Name</option>
+                                    }
+                                </InputSelect>
+                            </div>
 
                             <div class="mb-3">
                                 <label class="form-label auth-label">Con</label>
@@ -114,14 +116,17 @@
                                 }
                             </div>
 
-                            <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel">
+                            <div class="d-flex justify-content-between align-items-center mt-4">
+                               
+                                <button type="button" class="btn btn-danger" style="width: auto;" @onclick="Cancel">
                                     Cancelar
                                 </button>
-                                <button type="submit" class="btn btn-primary auth-submit" disabled="@_saving">
+                                <button type="submit" class="btn btn-primary auth-submit" style="width: auto;" disabled="@_saving">
                                     Publicar Artículo
                                 </button>
                             </div>
+
+                   
                         </EditForm>
                     </div>
                 </div>
@@ -133,6 +138,7 @@
 @code {
     private ArticleCreateModel _model = new ArticleCreateModel();
     private List<ArticleReferenceItem> _availableReferences = new List<ArticleReferenceItem>();
+    private List<Category> _categories = new List<Category>();
     private bool _saving;
     private string? _uploadedFileName;
     private IBrowserFile? _uploadedFile;
@@ -142,28 +148,30 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await EnsureDefaultCategoryAndPlan();
+        await EnsureDefaultPlan();
+        await EnsureDefaultCategories();
+        await LoadCategories();
         await LoadReferences();
     }
 
-    private async Task EnsureDefaultCategoryAndPlan()
+    private async Task EnsureDefaultPlan()
     {
-        var defaultCategory = await Db.Categories.OrderBy(c => c.Id).FirstOrDefaultAsync();
-        if (defaultCategory == null)
-        {
-            var newCategory = new Category
-            {
-                Name = "General",
-                IsActive = true
-            };
-            Db.Categories.Add(newCategory);
-            await Db.SaveChangesAsync();
-            _defaultCategoryId = newCategory.Id;
-        }
-        else
-        {
-            _defaultCategoryId = defaultCategory.Id;
-        }
+        // var defaultCategory = await Db.Categories.OrderBy(c => c.Id).FirstOrDefaultAsync();
+        // if (defaultCategory == null)
+        // {
+        //     var newCategory = new Category
+        //     {
+        //         Name = "General",
+        //         IsActive = true
+        //     };
+        //     Db.Categories.Add(newCategory);
+        //     await Db.SaveChangesAsync();
+        //     _defaultCategoryId = newCategory.Id;
+        // }
+        // else
+        // {
+        //     _defaultCategoryId = defaultCategory.Id;
+        // }
 
         var defaultPlan = await Db.Plans.OrderBy(p => p.Id).FirstOrDefaultAsync();
         if (defaultPlan != null)
@@ -183,6 +191,37 @@
                 Title = a.Title
             })
             .ToListAsync();
+    }
+
+    private async Task EnsureDefaultCategories()
+    {
+        if (!await Db.Categories.AnyAsync())
+        {
+            var defaults = new List<Category>
+        {
+            new Category { Name = "Economía", IsActive = true },
+            new Category { Name = "Política", IsActive = true },
+            new Category { Name = "Artes y Cultura", IsActive = true },
+            new Category { Name = "Tecnología", IsActive = true },
+            new Category { Name = "Internacionales", IsActive = true },
+            new Category { Name = "Deportes", IsActive = true }
+        };
+
+            Db.Categories.AddRange(defaults);
+            await Db.SaveChangesAsync();
+        }
+    }
+    private async Task LoadCategories()
+    {
+        _categories = await Db.Categories
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+
+        if (_categories.Any())
+        {
+            _model.CategoryId = _categories.First().Id;
+        }
     }
 
     private async Task SaveArticle()
@@ -215,8 +254,8 @@
             AuthorName = authorName,
             AuthorEmail = authorEmail,
             CreatedAt = DateTime.UtcNow,
-            Status = ArticleStatus.PendingReview,
-            CategoryId = _defaultCategoryId,
+            Status = ArticleStatus.Pendiente,
+            CategoryId = _model.CategoryId,
             PlanId = _defaultPlanId,
             AttachmentPath = attachmentPath
         };
@@ -273,6 +312,9 @@
         [Required]
         [MinLength(20, ErrorMessage = "El contenido debe tener al menos 20 caracteres.")]
         public string Content { get; set; } = "";
+
+        [Required(ErrorMessage = "Debe seleccionar una categoría")]
+        public int CategoryId { get; set; }
 
         public int? ReferencedArticleId { get; set; }
     }

@@ -1,6 +1,6 @@
 ﻿@page "/admin/envios"
 @rendermode InteractiveServer
-@attribute [Authorize(Roles = "EncargadoSistema,Administrador")]
+@* @attribute [Authorize(Roles = "EncargadoSistema,Administrador")] *@
 
 @using DiarioMagna.Data
 @using DiarioMagna.Domain.Models
@@ -186,7 +186,7 @@
             .Include(a => a.Plan)
             .Include(a => a.ArticleNoticieros)
             .ThenInclude(an => an.Noticiero)
-            .Where(a => a.Status == ArticleStatus.Approved)
+            .Where(a => a.Status == ArticleStatus.Aprobado)
             .OrderByDescending(a => a.CreatedAt)
             .ToListAsync();
 

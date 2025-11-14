@@ -1,6 +1,6 @@
 ﻿@page "/admin"
 @rendermode InteractiveServer
-@attribute [Authorize(Roles = "Administrador")]
+@* @attribute [Authorize(Roles = "Administrador")] *@
 @inject NavigationManager Navigation
 
 <section class="admin-hero">
@@ -26,9 +26,7 @@
                 <div class="card shadow-sm border-0 admin-article-card">
                     <div class="card-body">
                         <h5 class="card-title">Solicitudes de artículos</h5>
-                        <p class="small text-muted">
-                            Revisar, aprobar o rechazar artículos enviados por la secretaría.
-                        </p>
+                       
                         <button class="btn btn-primary btn-sm" @onclick="GoSolicitudes">
                             Ir al panel de solicitudes
                         </button>
