@@ -1,7 +1,6 @@
-﻿@page "/admin/solicitudes"
+﻿@page "/admin"
 @rendermode InteractiveServer
-@attribute [Authorize(Roles = "RelacionesPublicas,Administrador")]
-@inject ApplicationDbContext Db
+@* @attribute [Authorize(Roles = "Administrador")] *@
 @inject NavigationManager Navigation
 
 <section class="admin-hero">
@@ -9,92 +8,11 @@
         <div class="d-flex justify-content-between align-items-start mb-3">
             <div class="d-flex align-items-center">
                 <div class="admin-hero-icon me-3">
-                    <span class="fs-2">📰</span>
+                    <span class="fs-2">⚙️</span>
                 </div>
                 <div>
-                    <h1 class="h4 mb-1 text-white">Diario Magna Publicadora</h1>
-                    <div class="small text-white-50">Panel de Administración de Artículos</div>
-                </div>
-            </div>
-            <div class="text-end text-white small">
-                <div class="fw-semibold">Administrador: Juan Perez</div>
-                <button class="btn btn-sm btn-outline-light mt-2" @onclick="LogoutRedirect">
-                    Cerrar Sesión
-                </button>
-            </div>
-        </div>
-
-        <div class="row admin-stats-row g-3">
-            <div class="col-6 col-md-3">
-                <div class="admin-stat-card">
-                    <div class="admin-stat-label">Artículos Pendientes</div>
-                    <div class="admin-stat-value">@_stats.Pending</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="admin-stat-card">
-                    <div class="admin-stat-label">Artículos Aprobados</div>
-                    <div class="admin-stat-value text-success">@_stats.Approved</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="admin-stat-card">
-                    <div class="admin-stat-label">Artículos Rechazados</div>
-                    <div class="admin-stat-value text-danger">@_stats.Rejected</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="admin-stat-card">
-                    <div class="admin-stat-label">Total de Artículos</div>
-                    <div class="admin-stat-value">@_stats.Total</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="admin-filter-bar">
-    <div class="container">
-        <div class="row g-3 align-items-end">
-            <div class="col-12 col-md-3">
-                <label class="form-label small fw-semibold mb-1">Estado</label>
-                <InputSelect class="form-select form-select-sm" @bind-Value="_selectedStatus">
-                    <option value="">Seleccione un Estado</option>
-                    <option value="@((int)ArticleStatus.PendingReview)">Pendiente</option>
-                    <option value="@((int)ArticleStatus.Approved)">Aprobado</option>
-                    <option value="@((int)ArticleStatus.Rejected)">Rechazado</option>
-                    <option value="-1">Todos</option>
-                </InputSelect>
-            </div>
-            <div class="col-12 col-md-3">
-                <label class="form-label small fw-semibold mb-1">Plan</label>
-                <InputSelect class="form-select form-select-sm" @bind-Value="_selectedPlanId">
-                    <option value="">Seleccione un Plan</option>
-                    <option value="-1">Todos</option>
-                    @foreach (var p in _plans)
-                    {
-                        <option value="@p.Id">@p.Name</option>
-                    }
-                </InputSelect>
-            </div>
-            <div class="col-12 col-md-3">
-                <label class="form-label small fw-semibold mb-1">Categoría</label>
-                <InputSelect class="form-select form-select-sm" @bind-Value="_selectedCategoryId">
-                    <option value="">Seleccione una Categoría</option>
-                    <option value="-1">Todas</option>
-                    @foreach (var c in _categories)
-                    {
-                        <option value="@c.Id">@c.Name</option>
-                    }
-                </InputSelect>
-            </div>
-            <div class="col-12 col-md-3">
-                <label class="form-label small fw-semibold mb-1">Buscar</label>
-                <div class="input-group input-group-sm">
-                    <InputText class="form-control" @bind-Value="_searchTerm" placeholder="Busque por Título o Autor" />
-                    <button class="btn btn-primary" type="button" @onclick="ApplyFilters">
-                        <span class="bi bi-search"></span>
-                    </button>
+                    <h1 class="h4 mb-1 text-white">Panel de administración</h1>
+                    <div class="small text-white-50">Accesos rápidos a las secciones del sistema</div>
                 </div>
             </div>
         </div>
@@ -103,239 +21,61 @@
 
 <section class="admin-list-section">
     <div class="container">
-        <div class="admin-section-title mb-3">
-            <div class="admin-section-title-bar text-center text-white fw-semibold">
-                Artículos Pendientes a Revisar
-            </div>
-        </div>
-
-        @if (_loading)
-        {
-            <div class="text-center py-5">
-                <div class="spinner-border" role="status"></div>
-            </div>
-        }
-        else if (!_articles.Any())
-        {
-            <div class="alert alert-info">
-                No hay artículos que coincidan con los filtros seleccionados.
-            </div>
-        }
-        else
-        {
-            @foreach (var a in _articles)
-            {
-                <div class="card mb-3 shadow-sm border-0 admin-article-card">
+        <div class="row g-3">
+            <div class="col-12 col-md-4">
+                <div class="card shadow-sm border-0 admin-article-card">
                     <div class="card-body">
-                        <div class="row g-3 align-items-center">
-                            <div class="col-3 col-md-2">
-                                <div class="admin-article-thumb">
-                                    <span class="bi bi-image text-muted fs-4"></span>
-                                </div>
-                            </div>
-                            <div class="col-9 col-md-10">
-                                <div class="admin-article-header">
-                                    <div class="fw-semibold admin-article-title">@a.Title</div>
-                                    <div class="small text-muted">
-                                        @a.AuthorName · @a.AuthorEmail · @a.CreatedAt.ToString("dd/MM/yyyy")
-                                    </div>
-                                    <div class="small text-muted">
-                                        @a.CategoryName
-                                        @if (!string.IsNullOrWhiteSpace(a.PlanName))
-                                        {
-                                            <span> · @a.PlanName</span>
-                                        }
-                                        <span> · @a.StatusText</span>
-                                    </div>
-                                </div>
-
-                                <div class="mt-3 d-flex flex-wrap gap-2">
-                                    <button class="btn btn-warning btn-sm" @onclick="() => EditArticle(a.Id)">Editar</button>
-                                    <button class="btn btn-info btn-sm text-white" @onclick="() => ViewArticle(a.Id)">Ver Artículo Completo</button>
-                                    <button class="btn btn-success btn-sm" @onclick="() => ApproveArticle(a.Id)">Aprobar</button>
-                                    <button class="btn btn-danger btn-sm" @onclick="() => RejectArticle(a.Id)">Rechazar</button>
-                                </div>
-                            </div>
-                        </div>
+                        <h5 class="card-title">Solicitudes de artículos</h5>
+                       
+                        <button class="btn btn-primary btn-sm" @onclick="GoSolicitudes">
+                            Ir al panel de solicitudes
+                        </button>
                     </div>
                 </div>
-            }
-
-            <div class="d-flex justify-content-center mt-4">
-                <span class="small text-muted">Paginación demo · luego podemos hacerla real</span>
             </div>
-        }
+            <div class="col-12 col-md-4">
+                <div class="card shadow-sm border-0 admin-article-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Panel de envíos</h5>
+                        <p class="small text-muted">
+                            Seleccionar los noticieros a los que se enviarán los artículos aprobados.
+                        </p>
+                        <button class="btn btn-primary btn-sm" @onclick="GoEnvios">
+                            Ir al panel de envíos
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="card shadow-sm border-0 admin-article-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Noticieros</h5>
+                        <p class="small text-muted">
+                            Administrar los noticieros disponibles para publicación.
+                        </p>
+                        <button class="btn btn-primary btn-sm" @onclick="GoNoticieros">
+                            Ir a noticieros
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 
-@code
-{
-    private List<ArticleListItem> _articles = new List<ArticleListItem>();
-    private List<Category> _categories = new List<Category>();
-    private List<Plan> _plans = new List<Plan>();
-    private bool _loading = true;
-
-    private string _selectedStatus = "";
-    private string _selectedPlanId = "";
-    private string _selectedCategoryId = "";
-    private string _searchTerm = "";
-
-    private ArticleStats _stats = new ArticleStats();
-
-    protected override async Task OnInitializedAsync()
+@code {
+    private void GoSolicitudes()
     {
-        await LoadFilters();
-        await LoadStats();
-        await LoadArticles();
-        _loading = false;
+        Navigation.NavigateTo("/admin/solicitudes");
     }
 
-    private async Task LoadFilters()
+    private void GoEnvios()
     {
-        _categories = await Db.Categories.Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync();
-        _plans = await Db.Plans.OrderBy(p => p.Name).ToListAsync();
+        Navigation.NavigateTo("/admin/envios");
     }
 
-    private async Task LoadStats()
+    private void GoNoticieros()
     {
-        _stats.Pending = await Db.Articles.CountAsync(a => a.Status == ArticleStatus.PendingReview);
-        _stats.Approved = await Db.Articles.CountAsync(a => a.Status == ArticleStatus.Approved);
-        _stats.Rejected = await Db.Articles.CountAsync(a => a.Status == ArticleStatus.Rejected);
-        _stats.Total = await Db.Articles.CountAsync();
-    }
-
-    private async Task LoadArticles()
-    {
-        var query = Db.Articles
-            .Include(a => a.Category)
-            .Include(a => a.Plan)
-            .AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(_selectedStatus) && _selectedStatus != "-1")
-        {
-            var statusValue = int.Parse(_selectedStatus);
-            var status = (ArticleStatus)statusValue;
-            query = query.Where(a => a.Status == status);
-        }
-        else
-        {
-            query = query.Where(a => a.Status == ArticleStatus.PendingReview);
-        }
-
-        if (!string.IsNullOrWhiteSpace(_selectedPlanId) && _selectedPlanId != "-1")
-        {
-            var planId = int.Parse(_selectedPlanId);
-            query = query.Where(a => a.PlanId == planId);
-        }
-
-        if (!string.IsNullOrWhiteSpace(_selectedCategoryId) && _selectedCategoryId != "-1")
-        {
-            var categoryId = int.Parse(_selectedCategoryId);
-            query = query.Where(a => a.CategoryId == categoryId);
-        }
-
-        if (!string.IsNullOrWhiteSpace(_searchTerm))
-        {
-            var term = _searchTerm.Trim().ToLower();
-            query = query.Where(a => a.Title.ToLower().Contains(term) || a.AuthorName.ToLower().Contains(term));
-        }
-
-        var list = await query
-            .OrderByDescending(a => a.CreatedAt)
-            .ToListAsync();
-
-        _articles = list.Select(a => new ArticleListItem
-        {
-            Id = a.Id,
-            Title = a.Title,
-            AuthorName = a.AuthorName,
-            AuthorEmail = a.AuthorEmail,
-            CreatedAt = a.CreatedAt,
-            CategoryName = a.Category != null ? a.Category.Name : "",
-            PlanName = a.Plan != null ? a.Plan.Name : "",
-            Status = a.Status,
-            StatusText = GetStatusText(a.Status)
-        }).ToList();
-    }
-
-    private async Task ApplyFilters()
-    {
-        _loading = true;
-        await LoadArticles();
-        _loading = false;
-    }
-
-    private string GetStatusText(ArticleStatus status)
-    {
-        return status switch
-        {
-            ArticleStatus.PendingReview => "Pendiente",
-            ArticleStatus.Approved => "Aprobado",
-            ArticleStatus.Rejected => "Rechazado",
-            ArticleStatus.Sent => "Enviado",
-            _ => "Borrador"
-        };
-    }
-
-    private void EditArticle(int id)
-    {
-        Navigation.NavigateTo($"/articles/edit/{id}");
-    }
-
-    private void ViewArticle(int id)
-    {
-        Navigation.NavigateTo($"/articles/details/{id}");
-    }
-
-    private async Task ApproveArticle(int id)
-    {
-        var article = await Db.Articles.FindAsync(id);
-        if (article == null)
-            return;
-
-        article.Status = ArticleStatus.Approved;
-        article.ReviewedAt = DateTime.UtcNow;
-        await Db.SaveChangesAsync();
-        await LoadStats();
-        await LoadArticles();
-    }
-
-    private async Task RejectArticle(int id)
-    {
-        var article = await Db.Articles.FindAsync(id);
-        if (article == null)
-            return;
-
-        article.Status = ArticleStatus.Rejected;
-        article.ReviewedAt = DateTime.UtcNow;
-        await Db.SaveChangesAsync();
-        await LoadStats();
-        await LoadArticles();
-    }
-
-    private void LogoutRedirect()
-    {
-        Navigation.NavigateTo("Account/Logout");
-    }
-
-    private class ArticleListItem
-    {
-        public int Id { get; set; }
-        public string Title { get; set; } = string.Empty;
-        public string AuthorName { get; set; } = string.Empty;
-        public string AuthorEmail { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; }
-        public string CategoryName { get; set; } = string.Empty;
-        public string PlanName { get; set; } = string.Empty;
-        public ArticleStatus Status { get; set; }
-        public string StatusText { get; set; } = string.Empty;
-    }
-
-    private class ArticleStats
-    {
-        public int Pending { get; set; }
-        public int Approved { get; set; }
-        public int Rejected { get; set; }
-        public int Total { get; set; }
+        Navigation.NavigateTo("/admin/noticieros");
     }
 }

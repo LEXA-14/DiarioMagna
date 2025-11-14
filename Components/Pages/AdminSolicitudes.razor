@@ -1,0 +1,287 @@
+﻿@page "/admin/solicitudes"
+@rendermode InteractiveServer
+@* @attribute [Authorize(Roles = "RelacionesPublicas,Administrador")] *@
+
+@using DiarioMagna.Data
+@using DiarioMagna.Domain.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext Db
+@inject NavigationManager Navigation
+
+<section class="admin-hero">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="d-flex align-items-center">
+                <div class="admin-hero-icon me-3">
+                    <span class="fs-2">📑</span>
+                </div>
+                <div>
+                    <h1 class="h4 mb-1 text-white">Panel de Solicitudes</h1>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="admin-list-section">
+    <div class="container">
+        @if (_loading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border" role="status"></div>
+            </div>
+        }
+        else if (!_items.Any())
+        {
+            <div class="alert alert-info mt-3">
+                No hay artículos para mostrar con los filtros seleccionados.
+            </div>
+        }
+        else
+        {
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small mb-1">Buscar</label>
+                            <input class="form-control form-control-sm"
+                                   @bind="_search"
+                                   placeholder="Buscar por título o autor..." />
+                        </div>
+                        <div class="col-12 col-md-3">
+
+                            <label class="form-label small mb-1">Estado</label>
+                            <select class="form-select form-select-sm" @bind="_statusFilter">
+                                <option value="0">Pendiente de revisión</option>
+                                <option value="1">Aprobado</option>
+                                <option value="2">Rechazado</option>
+                                <option value="Todos">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-5 text-md-end">
+                            <div class="small text-muted mt-3 mt-md-0">
+                                Artículos encontrados: @GetFilteredItems().Count()
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                @foreach (var item in GetFilteredItems())
+                {
+                    <div class="col-12">
+                        <div class="card shadow-sm border-0 admin-article-card">
+                            <div class="card-body">
+                                <div class="d-flex flex-column flex-md-row gap-3">
+                                    <div class="sol-thumb">
+                                        @if (!string.IsNullOrWhiteSpace(item.AttachmentPath))
+                                        {
+                                            <img src="@item.AttachmentPath"
+                                                 class="img-fluid rounded"
+                                                 style="max-height: 100px; object-fit: cover; min-width: 140px;"
+                                                 alt="Imagen del artículo" />
+                                        }
+                                        else
+                                        {
+                                            <div class="d-flex align-items-center justify-content-center bg-light rounded"
+                                                 style="height: 100px; min-width: 140px;">
+                                                <span class="text-muted small">Sin imagen</span>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <h5 class="mb-1">@item.Title</h5>
+                                                
+                                                <div class="small text-muted">
+                                                    @item.AuthorName · @item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                                </div>
+                                                
+                                               
+                                                <div class="small text-muted">
+                                                    Categoría: @item.CategoryName
+                                                    @if (!string.IsNullOrWhiteSpace(item.PlanName))
+                                                    {
+                                                        <span> · Plan: @item.PlanName</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge @GetStatusBadgeClass(item.Status)">
+                                                    @item.Status
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div class="small text-muted mb-2">
+                                            @ShortContent(item.Content)
+                                        </div>
+
+                                        <div class="d-flex flex-wrap gap-2 justify-content-end">
+                                           
+                                            <button class="btn btn-outline-secondary btn-sm"
+                                                    @onclick="() => ViewArticle(item.Id)">
+                                                Ver artículo
+                                            </button>
+                                            <button class="btn btn-outline-primary btn-sm"
+                                                    @onclick="() => EditArticle(item.Id)">
+                                                Editar
+                                            </button>
+                                            <button class="btn btn-success btn-sm"
+                                                    
+                                                    @onclick="() => ChangeStatus(item, ArticleStatus.Aprobado)">
+                                                Aprobar
+                                            </button>
+                                            <button class="btn btn-danger btn-sm"
+                                                   
+                                                    @onclick="() => ChangeStatus(item, ArticleStatus.Rechazado)">
+                                                Rechazar
+                                            </button>
+                                        </div>
+
+                                        @if (!string.IsNullOrWhiteSpace(item.Message))
+                                        {
+                                            <div class="small text-success mt-2">
+                                                @item.Message
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    private List<SolicitudItem> _items = new();
+    private bool _loading = true;
+    private string _search = "";
+    private string _statusFilter = "1";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var query = Db.Articles
+            .Include(a => a.Category)
+            .Include(a => a.Plan)
+            .OrderByDescending(a => a.CreatedAt);
+
+        var list = await query.ToListAsync();
+
+        _items = list.Select(a => new SolicitudItem
+        {
+            Id = a.Id,
+            Title = a.Title,
+            Content = a.Content,
+            AuthorName = a.AuthorName,
+            AuthorEmail = a.AuthorEmail,
+            CreatedAt = a.CreatedAt,
+            CategoryName = a.Category?.Name ?? "General",
+            PlanName = a.Plan?.Name,
+            Status = a.Status,
+            AttachmentPath = a.AttachmentPath
+        }).ToList();
+
+        _loading = false;
+    }
+
+    private IEnumerable<SolicitudItem> GetFilteredItems()
+    {
+        IEnumerable<SolicitudItem> query = _items;
+
+        if (!string.IsNullOrWhiteSpace(_search))
+        {
+            var s = _search.Trim().ToLower();
+            query = query.Where(i =>
+                i.Title.ToLower().Contains(s) ||
+                i.AuthorName.ToLower().Contains(s));
+        }
+
+        if (_statusFilter != "Todos" &&
+            Enum.TryParse<ArticleStatus>(_statusFilter, out var status))
+        {
+            query = query.Where(i => i.Status == status);
+        }
+
+        return query;
+    }
+
+    private string GetStatusBadgeClass(ArticleStatus status)
+    {
+        return status switch
+        {
+            ArticleStatus.Aprobado => "bg-success",
+            ArticleStatus.Rechazado => "bg-danger",
+            ArticleStatus.Pendiente => "bg-warning text-dark",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string ShortContent(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return "";
+
+        var text = content.Trim();
+        if (text.Length <= 160)
+            return text;
+
+        return text.Substring(0, 160) + "...";
+    }
+
+    private void ViewArticle(int id)
+    {
+        Navigation.NavigateTo($"/articles/details/{id}");
+    }
+
+    private void EditArticle(int id)
+    {
+        Navigation.NavigateTo($"/articles/edit/{id}");
+    }
+
+    private async Task ChangeStatus(SolicitudItem item, ArticleStatus newStatus)
+    {
+        item.Saving = true;
+        item.Message = null;
+
+        var entity = await Db.Articles.FirstOrDefaultAsync(a => a.Id == item.Id);
+        if (entity == null)
+        {
+            item.Saving = false;
+            item.Message = "No se encontró el artículo.";
+            return;
+        }
+
+        entity.Status = newStatus;
+        await Db.SaveChangesAsync();
+
+        item.Status = newStatus;
+        item.Saving = false;
+        item.Message = newStatus == ArticleStatus.Aprobado
+            ? "Artículo aprobado correctamente."
+            : "Artículo rechazado correctamente.";
+    }
+
+    private sealed class SolicitudItem
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Content { get; set; } = "";
+        public string AuthorName { get; set; } = "";
+        public string AuthorEmail { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+        public string CategoryName { get; set; } = "";
+        public string? PlanName { get; set; }
+        public ArticleStatus Status { get; set; }
+        public string? AttachmentPath { get; set; }
+        public bool Saving { get; set; }
+        public string? Message { get; set; }
+    }
+}

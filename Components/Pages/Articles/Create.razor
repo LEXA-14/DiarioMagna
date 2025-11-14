@@ -1,191 +1,286 @@
 ﻿@page "/articles/create"
 @rendermode InteractiveServer
-@attribute [Authorize(Roles = "Secretaria,RelacionesPublicas,Administrador")]
+@* @attribute [Authorize(Roles = "Secretaria,RelacionesPublicas,Administrador")] *@
+
+@using System.ComponentModel.DataAnnotations
+@using System.IO
+@using DiarioMagna.Data
+@using DiarioMagna.Domain.Models
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Hosting
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
 @inject IWebHostEnvironment Env
-@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthStateProvider
 
-<section class="bg-dark text-white py-3 mb-4">
-    <div class="container d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center">
-            <div class="me-3">
-                <span class="fs-2">📰</span>
+<section class="admin-hero">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="d-flex align-items-center">
+                <div class="admin-hero-icon me-3">
+                    <span class="fs-2">📝</span>
+                </div>
+                <div>
+                    <h1 class="h4 mb-1 text-white">Crear Nuevo Artículo</h1>
+                    <div class="small text-white-50">Plataforma de gestión de noticias</div>
+                </div>
             </div>
-            <div>
-                <h1 class="h4 mb-1">Diario Magna Publicadora</h1>
-                <div class="small">Crear Nuevo Artículo</div>
-            </div>
-        </div>
-        <div class="text-end small">
-            <div class="fw-semibold">Secretaria</div>
-            @if (!string.IsNullOrWhiteSpace(_currentUserName))
-            {
-                <div>@_currentUserName</div>
-            }
-            else
-            {
-                <div>Usuario no autenticado</div>
-            }
         </div>
     </div>
 </section>
 
-<div class="container mb-5">
-    <div class="row g-3">
-        <div class="col-lg-4">
-            <div class="card shadow-sm border-0 mb-3">
-                <div class="card-body">
-                    <div class="small text-muted mb-2">Flujo del Artículo</div>
-                    <ol class="small mb-0">
-                        <li>Secretaría crea y envía la noticia.</li>
-                        <li>Relaciones Públicas revisa y aprueba.</li>
-                        <li>Encargado del sistema selecciona noticieros.</li>
-                    </ol>
+<section class="admin-list-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-12 col-lg-4">
+                <div class="card shadow-sm border-0 admin-article-card mb-3">
+                  
                 </div>
-            </div>
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <div class="small text-muted mb-2">Resumen</div>
-                    <div class="small">
-                        Título actual:
-                        <span class="fw-semibold">
-                            @(_model.Title?.Length > 0 ? _model.Title : "Sin título")
-                        </span>
-                    </div>
-                    <div class="small mt-1">
-                        Categoría:
-                        <span class="fw-semibold">
-                            @_selectedCategoryName
-                        </span>
-                    </div>
-                    <div class="small mt-1">
-                        Plan:
-                        <span class="fw-semibold">
-                            @_selectedPlanName
-                        </span>
-                    </div>
-                    <div class="small mt-3 text-muted">
-                        El autor se tomará del usuario autenticado.
+
+                <div class="card shadow-sm border-0 admin-article-card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-2">Resumen</h5>
+                        <div class="small mb-1">
+                            <span class="fw-semibold">Título actual:</span>
+                            <span>@(string.IsNullOrWhiteSpace(_model.Title) ? "Sin título" : _model.Title)</span>
+                        </div>
+                        <div class="small mb-1">
+                            <span class="fw-semibold">Contenido:</span>
+                            <span>@(_model.Content?.Length > 0 ? $"{_model.Content.Length} caracteres" : "Sin contenido")</span>
+                        </div>
+                        <div class="small mb-1">
+                            <span class="fw-semibold">Referencia:</span>
+                            <span>@GetReferenceSummary()</span>
+                        </div>
+                        <div class="small text-muted mt-2">
+                            El autor se tomará del usuario autenticado.
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-lg-8">
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-4">
-                    <EditForm Model="_model" OnValidSubmit="HandleValidSubmit">
-                        <DataAnnotationsValidator />
-                        <ValidationSummary />
-
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label class="form-label fw-semibold">Título del Artículo</label>
-                                <InputText class="form-control" @bind-Value="_model.Title" />
-                                <ValidationMessage For="@(() => _model.Title)" />
+            <div class="col-12 col-lg-8">
+                <div class="card shadow-sm border-0 admin-article-card">
+                    <div class="card-body">
+                        @if (!string.IsNullOrWhiteSpace(_successMessage))
+                        {
+                            <div class="alert alert-success py-2 px-3 small mb-3">
+                                @_successMessage
                             </div>
+                        }
 
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Categoría</label>
-                                <InputSelect class="form-select" @bind-Value="_model.CategoryId" @onchange="OnCategoryChanged">
-                                    <option value="0">Seleccione una categoría</option>
-                                    @foreach (var c in _categories)
-                                    {
-                                        <option value="@c.Id">@c.Name</option>
-                                    }
-                                </InputSelect>
-                                <ValidationMessage For="@(() => _model.CategoryId)" />
+                        <EditForm Model="_model" OnValidSubmit="SaveArticle">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary class="text-danger small" />
+
+                            <div class="mb-3">
+                                <label class="form-label auth-label">Título del Artículo</label>
+                                <InputText class="form-control auth-input" @bind-Value="_model.Title" />
                             </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Plan (opcional)</label>
-                                <InputSelect class="form-select" @bind-Value="_model.PlanId" @onchange="OnPlanChanged">
-                                    <option value="">Sin plan</option>
-                                    @foreach (var p in _plans)
+                            <div class="mb-3">
+                                <label class="form-label auth-label">Categoría</label>
+                                <InputSelect class="form-select" @bind-Value="_model.CategoryId">
+                                    @foreach (var cat in _categories)
                                     {
-                                        <option value="@p.Id">@p.Name</option>
+                                        <option value="@cat.Id">@cat.Name</option>
                                     }
                                 </InputSelect>
                             </div>
 
-                            <div class="col-12">
-                                <label class="form-label fw-semibold">Referencia</label>
-                                <InputText class="form-control" @bind-Value="_model.ReferenceText" placeholder="Nota o referencia breve para Relaciones Públicas" />
-                                <ValidationMessage For="@(() => _model.ReferenceText)" />
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label fw-semibold">Contenido del Artículo</label>
-                                <InputTextArea class="form-control" @bind-Value="_model.Content" rows="8" />
-                                <ValidationMessage For="@(() => _model.Content)" />
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label fw-semibold">Subir Archivo (Imagen, PDF, Documento, Video)</label>
-                                <div class="upload-dropzone d-flex flex-column align-items-center justify-content-center text-center">
-                                    <InputFile OnChange="HandleFileSelected" class="upload-input" />
-                                    <div class="mb-2">
-                                        <span class="display-6">⬆️</span>
-                                    </div>
-                                    <div class="small">
-                                        Haz clic para seleccionar un archivo<br />
-                                        Formatos: JPG, PNG, PDF, DOC, DOCX, MP4
-                                    </div>
-                                    @if (!string.IsNullOrWhiteSpace(_selectedFileName))
+                            <div class="mb-3">
+                                <label class="form-label auth-label">Con</label>
+                                <InputSelect class="form-select" @bind-Value="_model.ReferencedArticleId">
+                                    <option value="">Noticia sin referencia</option>
+                                    @foreach (var refArt in _availableReferences)
                                     {
-                                        <div class="mt-2 small text-muted">
-                                            Archivo seleccionado: @_selectedFileName
-                                        </div>
+                                        <option value="@refArt.Id">@refArt.Title</option>
                                     }
-                                </div>
+                                </InputSelect>
                             </div>
-                        </div>
 
-                        <div class="d-flex justify-content-between mt-4">
-                            <button type="button" class="btn btn-outline-secondary px-4" @onclick="Cancel">
-                                Cancelar
-                            </button>
-                            <button type="submit" class="btn btn-primary px-4">
-                                Enviar a Revisión
-                            </button>
-                        </div>
-                    </EditForm>
+                            <div class="mb-3">
+                                <label class="form-label auth-label">Contenido del artículo</label>
+                                <InputTextArea class="form-control" style="min-height: 180px;" @bind-Value="_model.Content" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label auth-label">Subir Archivo (Imagen, PDF, Documento, Video)</label>
+                                <InputFile OnChange="OnFileChange" />
+                                @if (!string.IsNullOrWhiteSpace(_uploadedFileName))
+                                {
+                                    <div class="small text-muted mt-1">
+                                        Archivo seleccionado: @_uploadedFileName
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-4">
+                               
+                                <button type="button" class="btn btn-danger" style="width: auto;" @onclick="Cancel">
+                                    Cancelar
+                                </button>
+                                <button type="submit" class="btn btn-primary auth-submit" style="width: auto;" disabled="@_saving">
+                                    Publicar Artículo
+                                </button>
+                            </div>
+
+                   
+                        </EditForm>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 
-@code
-{
-    private ArticleInputModel _model = new ArticleInputModel();
+@code {
+    private ArticleCreateModel _model = new ArticleCreateModel();
+    private List<ArticleReferenceItem> _availableReferences = new List<ArticleReferenceItem>();
     private List<Category> _categories = new List<Category>();
-    private List<Plan> _plans = new List<Plan>();
-    private IBrowserFile _uploadedFile;
-    private string _selectedFileName = string.Empty;
-
-    private string _currentUserName = string.Empty;
-    private string _currentUserEmail = string.Empty;
-    private string _currentUserId = string.Empty;
-
-    private string _selectedCategoryName = "Sin categoría";
-    private string _selectedPlanName = "Sin plan";
+    private bool _saving;
+    private string? _uploadedFileName;
+    private IBrowserFile? _uploadedFile;
+    private int _defaultCategoryId;
+    private int? _defaultPlanId;
+    private string? _successMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        _categories = await Db.Categories.Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync();
-        _plans = await Db.Plans.OrderBy(p => p.Name).ToListAsync();
+        await EnsureDefaultPlan();
+        await EnsureDefaultCategories();
+        await LoadCategories();
+        await LoadReferences();
+    }
+
+    private async Task EnsureDefaultPlan()
+    {
+        // var defaultCategory = await Db.Categories.OrderBy(c => c.Id).FirstOrDefaultAsync();
+        // if (defaultCategory == null)
+        // {
+        //     var newCategory = new Category
+        //     {
+        //         Name = "General",
+        //         IsActive = true
+        //     };
+        //     Db.Categories.Add(newCategory);
+        //     await Db.SaveChangesAsync();
+        //     _defaultCategoryId = newCategory.Id;
+        // }
+        // else
+        // {
+        //     _defaultCategoryId = defaultCategory.Id;
+        // }
+
+        var defaultPlan = await Db.Plans.OrderBy(p => p.Id).FirstOrDefaultAsync();
+        if (defaultPlan != null)
+        {
+            _defaultPlanId = defaultPlan.Id;
+        }
+    }
+
+    private async Task LoadReferences()
+    {
+        _availableReferences = await Db.Articles
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(20)
+            .Select(a => new ArticleReferenceItem
+            {
+                Id = a.Id,
+                Title = a.Title
+            })
+            .ToListAsync();
+    }
+
+    private async Task EnsureDefaultCategories()
+    {
+        if (!await Db.Categories.AnyAsync())
+        {
+            var defaults = new List<Category>
+        {
+            new Category { Name = "Economía", IsActive = true },
+            new Category { Name = "Política", IsActive = true },
+            new Category { Name = "Artes y Cultura", IsActive = true },
+            new Category { Name = "Tecnología", IsActive = true },
+            new Category { Name = "Internacionales", IsActive = true },
+            new Category { Name = "Deportes", IsActive = true }
+        };
+
+            Db.Categories.AddRange(defaults);
+            await Db.SaveChangesAsync();
+        }
+    }
+    private async Task LoadCategories()
+    {
+        _categories = await Db.Categories
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+
+        if (_categories.Any())
+        {
+            _model.CategoryId = _categories.First().Id;
+        }
+    }
+
+    private async Task SaveArticle()
+    {
+        _saving = true;
+        _successMessage = null;
 
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
-        if (user != null && user.Identity != null && user.Identity.IsAuthenticated)
+        var authorName = user.Identity?.Name ?? "Usuario";
+        var authorEmail = user.Claims.FirstOrDefault(c => c.Type == "email")?.Value ?? "";
+
+        string? attachmentPath = null;
+        if (_uploadedFile != null)
         {
-            _currentUserName = user.Identity.Name ?? string.Empty;
-            _currentUserEmail = user.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? string.Empty;
-            _currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var uploadsFolder = Path.Combine(Env.WebRootPath, "uploads");
+            Directory.CreateDirectory(uploadsFolder);
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(_uploadedFile.Name)}";
+            var filePath = Path.Combine(uploadsFolder, fileName);
+            using var stream = File.Create(filePath);
+            await _uploadedFile.OpenReadStream(10 * 1024 * 1024).CopyToAsync(stream);
+            attachmentPath = $"/uploads/{fileName}";
         }
+
+        var article = new Article
+        {
+            Title = _model.Title.Trim(),
+            Content = _model.Content.Trim(),
+            AuthorName = authorName,
+            AuthorEmail = authorEmail,
+            CreatedAt = DateTime.UtcNow,
+            Status = ArticleStatus.Pendiente,
+            CategoryId = _model.CategoryId,
+            PlanId = _defaultPlanId,
+            AttachmentPath = attachmentPath
+        };
+
+        Db.Articles.Add(article);
+        await Db.SaveChangesAsync();
+
+        if (_model.ReferencedArticleId.HasValue)
+        {
+            var reference = new ArticleReference
+            {
+                ArticleId = article.Id,
+                ReferencedArticleId = _model.ReferencedArticleId.Value
+            };
+            Db.ArticleReferences.Add(reference);
+            await Db.SaveChangesAsync();
+        }
+
+        _model = new ArticleCreateModel();
+        _uploadedFile = null;
+        _uploadedFileName = null;
+        await LoadReferences();
+
+        _successMessage = "Artículo enviado correctamente para revisión.";
+        _saving = false;
     }
 
     private void Cancel()
@@ -193,96 +288,40 @@
         Navigation.NavigateTo("/");
     }
 
-    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    private void OnFileChange(InputFileChangeEventArgs e)
     {
         _uploadedFile = e.File;
-        _selectedFileName = _uploadedFile?.Name ?? string.Empty;
+        _uploadedFileName = e.File.Name;
     }
 
-    private async Task HandleValidSubmit()
+    private string GetReferenceSummary()
     {
-        var article = new Article
-        {
-            AuthorName = string.IsNullOrWhiteSpace(_currentUserName) ? "Usuario" : _currentUserName,
-            AuthorEmail = _currentUserEmail,
-            Title = _model.Title,
-            Content = _model.Content,
-            CategoryId = _model.CategoryId,
-            ReferenceText = _model.ReferenceText ?? string.Empty,
-            Status = ArticleStatus.PendingReview,
-            CreatedAt = DateTime.UtcNow,
-            SecretaryUserId = _currentUserId
-        };
+        if (!_model.ReferencedArticleId.HasValue)
+            return "Sin referencia.";
 
-        if (_model.PlanId.HasValue)
-        {
-            article.PlanId = _model.PlanId.Value;
-        }
-
-        if (_uploadedFile != null)
-        {
-            var uploadsFolder = Path.Combine(Env.WebRootPath, "uploads", "articles");
-            if (!Directory.Exists(uploadsFolder))
-                Directory.CreateDirectory(uploadsFolder);
-
-            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(_uploadedFile.Name);
-            var filePath = Path.Combine(uploadsFolder, fileName);
-
-            await using var stream = _uploadedFile.OpenReadStream(long.MaxValue);
-            await using var fileStream = File.Create(filePath);
-            await stream.CopyToAsync(fileStream);
-
-            article.UploadedFilePath = Path.Combine("uploads", "articles", fileName).Replace("\\", "/");
-        }
-
-        Db.Articles.Add(article);
-        await Db.SaveChangesAsync();
-
-        Navigation.NavigateTo("/admin/solicitudes");
+        var item = _availableReferences.FirstOrDefault(r => r.Id == _model.ReferencedArticleId.Value);
+        return item == null ? "Referencia seleccionada." : item.Title;
     }
 
-    private void OnCategoryChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var id))
-        {
-            var cat = _categories.FirstOrDefault(c => c.Id == id);
-            _selectedCategoryName = cat != null ? cat.Name : "Sin categoría";
-        }
-        else
-        {
-            _selectedCategoryName = "Sin categoría";
-        }
-    }
-
-    private void OnPlanChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var id))
-        {
-            var p = _plans.FirstOrDefault(x => x.Id == id);
-            _selectedPlanName = p != null ? p.Name : "Sin plan";
-        }
-        else
-        {
-            _selectedPlanName = "Sin plan";
-        }
-    }
-
-    public class ArticleInputModel
+    private sealed class ArticleCreateModel
     {
         [Required]
         [StringLength(200)]
-        public string Title { get; set; } = string.Empty;
+        public string Title { get; set; } = "";
 
         [Required]
-        [Range(1, int.MaxValue)]
+        [MinLength(20, ErrorMessage = "El contenido debe tener al menos 20 caracteres.")]
+        public string Content { get; set; } = "";
+
+        [Required(ErrorMessage = "Debe seleccionar una categoría")]
         public int CategoryId { get; set; }
 
-        public int? PlanId { get; set; }
+        public int? ReferencedArticleId { get; set; }
+    }
 
-        [StringLength(500)]
-        public string ReferenceText { get; set; } = string.Empty;
-
-        [Required]
-        public string Content { get; set; } = string.Empty;
+    private sealed class ArticleReferenceItem
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
     }
 }

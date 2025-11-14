@@ -51,12 +51,11 @@ using (var scope = app.Services.CreateScope())
 
     string[] roleNames =
     {
-    AppRoles.Secretaria,
-    AppRoles.RelacionesPublicas,
-    AppRoles.EncargadoSistema,
-    AppRoles.Administrador
+        AppRoles.Secretaria,
+        AppRoles.RelacionesPublicas,
+        AppRoles.EncargadoSistema,
+        AppRoles.Administrador
     };
-
 
     foreach (var roleName in roleNames)
     {
@@ -87,5 +86,11 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.MapAdditionalIdentityEndpoints();
+
+app.MapPost("/app/logout", async (SignInManager<ApplicationUser> signInManager) =>
+{
+    await signInManager.SignOutAsync();
+    return Results.Redirect("/");
+});
 
 app.Run();

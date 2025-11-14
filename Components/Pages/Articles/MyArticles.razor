@@ -1,4 +1,4 @@
-﻿@page "/articles/details/{id:int}"
+﻿@page "/articles/{id:int}"
 @rendermode InteractiveServer
 @* @attribute [Authorize(Roles = "Secretaria,RelacionesPublicas,EncargadoSistema,Administrador")] *@
 
@@ -106,9 +106,7 @@
                                 }
                                 else
                                 {
-                                    <div class="small text-muted">
-                                        Este artículo aún no ha sido enviado a ningún noticiero.
-                                    </div>
+                                    <div class="small text-muted">Este artículo aún no ha sido enviado a ningún noticiero.</div>
                                 }
                             </div>
                         </div>
@@ -197,7 +195,7 @@
 
     private void GoBack()
     {
-        Navigation.NavigateTo("/mis-articulos");
+        Navigation.NavigateTo("/admin/solicitudes");
     }
 
     private string GetStatusBadgeClass(ArticleStatus status)
