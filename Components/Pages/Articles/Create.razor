@@ -156,22 +156,6 @@
 
     private async Task EnsureDefaultPlan()
     {
-        // var defaultCategory = await Db.Categories.OrderBy(c => c.Id).FirstOrDefaultAsync();
-        // if (defaultCategory == null)
-        // {
-        //     var newCategory = new Category
-        //     {
-        //         Name = "General",
-        //         IsActive = true
-        //     };
-        //     Db.Categories.Add(newCategory);
-        //     await Db.SaveChangesAsync();
-        //     _defaultCategoryId = newCategory.Id;
-        // }
-        // else
-        // {
-        //     _defaultCategoryId = defaultCategory.Id;
-        // }
 
         var defaultPlan = await Db.Plans.OrderBy(p => p.Id).FirstOrDefaultAsync();
         if (defaultPlan != null)
@@ -192,25 +176,37 @@
             })
             .ToListAsync();
     }
-
     private async Task EnsureDefaultCategories()
     {
-        if (!await Db.Categories.AnyAsync())
-        {
-            var defaults = new List<Category>
-        {
-            new Category { Name = "Economía", IsActive = true },
-            new Category { Name = "Política", IsActive = true },
-            new Category { Name = "Artes y Cultura", IsActive = true },
-            new Category { Name = "Tecnología", IsActive = true },
-            new Category { Name = "Internacionales", IsActive = true },
-            new Category { Name = "Deportes", IsActive = true }
-        };
+        var existingCategories = await Db.Categories.Select(c => c.Name).ToListAsync();
 
-            Db.Categories.AddRange(defaults);
-            await Db.SaveChangesAsync();
+        var defaultCategories = new List<string>
+    {
+        "Economía",
+        "Política",
+        "Artes y Cultura",
+        "Tecnología",
+        "Internacionales",
+        "Deportes"
+    };
+
+        foreach (var categoryName in defaultCategories)
+        {
+            if (!existingCategories.Contains(categoryName))
+            {
+                Db.Categories.Add(new Category
+                {
+                    Name = categoryName,
+                    IsActive = true
+                });
+            }
         }
+
+        await Db.SaveChangesAsync();
     }
+
+   
+   
     private async Task LoadCategories()
     {
         _categories = await Db.Categories
