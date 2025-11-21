@@ -3,10 +3,12 @@
 @attribute [Authorize(Roles = "EncargadoSistema,Administrador")]
 
 @using DiarioMagna.Data
+@using DiarioMagna.Services.Email
 @using DiarioMagna.Domain.Models
 @using Microsoft.EntityFrameworkCore
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
+@inject INoticieroEmailService noticieroEmailService
 
 <section class="admin-hero">
     <div class="container">
@@ -237,6 +239,7 @@
 
         var entity = await Db.Articles
             .Include(a => a.ArticleNoticieros)
+            .Include(a => a.Category)
             .FirstOrDefaultAsync(a => a.Id == item.Id);
 
         if (entity == null)
@@ -267,6 +270,30 @@
         }
 
         await Db.SaveChangesAsync();
+
+        var tasks = item.Noticieros
+        .Where(n => n.Selected)
+        .Select(async sel =>
+        {
+            try
+            {
+                var noticiero = await Db.Noticieros.FirstOrDefaultAsync(n => n.Id == sel.Id);
+                if (noticiero != null && !string.IsNullOrWhiteSpace(noticiero.ContactEmail))
+                {
+                    await noticieroEmailService.SendArticleAsync(
+                        noticiero.ContactEmail,
+                        entity,
+                        entity.AttachmentPath
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error enviando correo a {sel.Name}: {ex.Message}");
+            }
+        });
+
+        await Task.WhenAll(tasks);
 
         item.Saving = false;
         item.Message = "Envíos actualizados correctamente.";
