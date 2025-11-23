@@ -6,25 +6,15 @@
 @using DiarioMagna.Services.Email
 @using DiarioMagna.Domain.Models
 @using Microsoft.EntityFrameworkCore
+@using DiarioMagna.Components.Shared
+
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
 @inject INoticieroEmailService noticieroEmailService
 
-<section class="admin-hero">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-            <div class="d-flex align-items-center">
-                <div class="admin-hero-icon me-3">
-                    <span class="fs-2">📡</span>
-                </div>
-                <div>
-                    <h1 class="h4 mb-1 text-white">Panel de Envíos</h1>
-                    <div class="small text-white-50">Selecciona los noticieros a los que se enviará cada artículo aprobado</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+<PageHeader Icon="bi bi-send-check"
+            Title="Panel de Envíos"
+            Description="Selecciona los noticieros a los que se enviará cada artículo aprobado" />
 
 <section class="admin-list-section">
     <div class="container">
@@ -272,26 +262,26 @@
         await Db.SaveChangesAsync();
 
         var tasks = item.Noticieros
-        .Where(n => n.Selected)
-        .Select(async sel =>
-        {
-            try
+            .Where(n => n.Selected)
+            .Select(async sel =>
             {
-                var noticiero = await Db.Noticieros.FirstOrDefaultAsync(n => n.Id == sel.Id);
-                if (noticiero != null && !string.IsNullOrWhiteSpace(noticiero.ContactEmail))
+                try
                 {
-                    await noticieroEmailService.SendArticleAsync(
-                        noticiero.ContactEmail,
-                        entity,
-                        entity.AttachmentPath
-                    );
+                    var noticiero = await Db.Noticieros.FirstOrDefaultAsync(n => n.Id == sel.Id);
+                    if (noticiero != null && !string.IsNullOrWhiteSpace(noticiero.ContactEmail))
+                    {
+                        await noticieroEmailService.SendArticleAsync(
+                            noticiero.ContactEmail,
+                            entity,
+                            entity.AttachmentPath
+                        );
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error enviando correo a {sel.Name}: {ex.Message}");
-            }
-        });
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error enviando correo a {sel.Name}: {ex.Message}");
+                }
+            });
 
         await Task.WhenAll(tasks);
 

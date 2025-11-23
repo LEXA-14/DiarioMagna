@@ -5,52 +5,46 @@
 @using DiarioMagna.Domain.Models
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
+@using DiarioMagna.Components.Shared
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
 
-<section class="admin-hero">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-            <div class="d-flex align-items-center">
-                <div class="admin-hero-icon me-3">
-                    <span class="fs-2">📰</span>
-                </div>
-                <div>
-                    <h1 class="h4 mb-1 text-white">
-                        @HeaderTitle
-                    </h1>
-                    <div class="small text-white-50">
-                        @HeaderSubtitle
-                    </div>
-                </div>
-            </div>
+<PageHeader Icon="bi bi-newspaper"
+            Title="@HeaderTitle"
+            Description="@HeaderSubtitle">
 
-            @if (IsAuthenticated)
-            {
-                <div class="d-flex flex-column flex-sm-row gap-2">
-                    @if (IsSecretaria || IsAdmin)
-                    {
-                        <button class="btn btn-light btn-sm" @onclick="@(() => Navigation.NavigateTo("/articles/create"))">
-                            Crear artículo
-                        </button>
-                    }
-                    @if (IsRelaciones || IsAdmin)
-                    {
-                        <button class="btn btn-outline-light btn-sm" @onclick="@(() => Navigation.NavigateTo("/admin/solicitudes"))">
-                            Panel de solicitudes
-                        </button>
-                    }
-                    @if (IsEncargado || IsAdmin)
-                    {
-                        <button class="btn btn-outline-light btn-sm" @onclick="@(() => Navigation.NavigateTo("/admin/envios"))">
-                            Panel de envíos
-                        </button>
-                    }
-                </div>
-            }
-        </div>
-    </div>
-</section>
+    <RightContent>
+        @if (IsAuthenticated)
+        {
+            <div class="d-flex flex-wrap gap-2">
+                @if (IsSecretaria || IsAdmin)
+                {
+                    <button class="btn btn-light btn-sm d-inline-flex align-items-center"
+                            @onclick="@(() => Navigation.NavigateTo("/articles/create"))">
+                        <i class="bi bi-file-earmark-plus me-1"></i>
+                        Crear artículo
+                    </button>
+                }
+                @if (IsRelaciones || IsAdmin)
+                {
+                    <button class="btn btn-outline-light btn-sm d-inline-flex align-items-center"
+                            @onclick="@(() => Navigation.NavigateTo("/admin/solicitudes"))">
+                        <i class="bi bi-check2-square me-1"></i>
+                        Panel de solicitudes
+                    </button>
+                }
+                @if (IsEncargado || IsAdmin)
+                {
+                    <button class="btn btn-outline-light btn-sm d-inline-flex align-items-center"
+                            @onclick="@(() => Navigation.NavigateTo("/admin/envios"))">
+                        <i class="bi bi-broadcast-pin me-1"></i>
+                        Panel de envíos
+                    </button>
+                }
+            </div>
+        }
+    </RightContent>
+</PageHeader>
 
 <section class="admin-list-section">
     <div class="container">
@@ -67,7 +61,7 @@
                     <div class="card shadow-sm border-0 admin-article-card">
                         <div class="card-body">
                             <h5 class="mb-3">Bienvenido a Diario Magna</h5>
-                            
+
                             <ul class="mb-3 small">
                                 <li>Secretaría registra y envía las noticias.</li>
                                 <li>Relaciones Públicas revisa y aprueba el contenido.</li>
@@ -75,10 +69,12 @@
                                 <li>Administrador supervisa todo el proceso.</li>
                             </ul>
                             <div class="d-flex flex-wrap gap-2">
-                                <button class="btn btn-primary btn-sm" @onclick="@(() => Navigation.NavigateTo("/Account/Login"))">
+                                <button class="btn btn-primary btn-sm"
+                                        @onclick="@(() => Navigation.NavigateTo("/Account/Login"))">
                                     Iniciar sesión
                                 </button>
-                                <button class="btn btn-outline-primary btn-sm" @onclick="@(() => Navigation.NavigateTo("/Account/Register"))">
+                                <button class="btn btn-outline-primary btn-sm"
+                                        @onclick="@(() => Navigation.NavigateTo("/Account/Register"))">
                                     Registrarse
                                 </button>
                             </div>
@@ -175,7 +171,7 @@
                         <div class="card shadow-sm border-0 admin-article-card mb-3">
                             <div class="card-body">
                                 <h5 class="mb-3">Administrador del sistema</h5>
-                               
+
                                 <ul class="small mb-0">
                                     <li>Supervisa el volumen de noticias por estado.</li>
                                     <li>Administra usuarios y roles desde el módulo de identidad.</li>

@@ -5,24 +5,14 @@
 @using DiarioMagna.Data
 @using DiarioMagna.Domain.Models
 @using Microsoft.EntityFrameworkCore
+@using DiarioMagna.Components.Shared
+
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
 
-<section class="admin-hero">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-            <div class="d-flex align-items-center">
-                <div class="admin-hero-icon me-3">
-                    <span class="fs-2">📑</span>
-                </div>
-                <div>
-                    <h1 class="h4 mb-1 text-white">Panel de Solicitudes</h1>
-                    
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+<PageHeader Icon="bi bi-journal-check"
+            Title="Panel de Solicitudes"
+            Description="Revisa, aprueba o rechaza los artículos enviados por secretaría" />
 
 <section class="admin-list-section">
     <div class="container">
@@ -50,7 +40,6 @@
                                    placeholder="Buscar por título o autor..." />
                         </div>
                         <div class="col-12 col-md-3">
-
                             <label class="form-label small mb-1">Estado</label>
                             <select class="form-select form-select-sm" @bind="_statusFilter">
                                 <option value="0">Pendiente de revisión</option>
@@ -96,12 +85,11 @@
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <div>
                                                 <h5 class="mb-1">@item.Title</h5>
-                                                
+
                                                 <div class="small text-muted">
                                                     @item.AuthorName · @item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
                                                 </div>
-                                                
-                                               
+
                                                 <div class="small text-muted">
                                                     Categoría: @item.CategoryName
                                                     @if (!string.IsNullOrWhiteSpace(item.PlanName))
@@ -122,7 +110,6 @@
                                         </div>
 
                                         <div class="d-flex flex-wrap gap-2 justify-content-end">
-                                           
                                             <button class="btn btn-outline-secondary btn-sm"
                                                     @onclick="() => ViewArticle(item.Id)">
                                                 Ver artículo
@@ -132,12 +119,10 @@
                                                 Editar
                                             </button>
                                             <button class="btn btn-success btn-sm"
-                                                    
                                                     @onclick="() => ChangeStatus(item, ArticleStatus.Aprobado)">
                                                 Aprobar
                                             </button>
                                             <button class="btn btn-danger btn-sm"
-                                                   
                                                     @onclick="() => ChangeStatus(item, ArticleStatus.Rechazado)">
                                                 Rechazar
                                             </button>
