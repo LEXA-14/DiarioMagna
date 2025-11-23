@@ -10,64 +10,86 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Hosting
+@using DiarioMagna.Components.Shared
+
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IWebHostEnvironment Env
 
-<section class="admin-hero">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-            <div class="d-flex align-items-center">
-                <div class="admin-hero-icon me-3">
-                    <span class="fs-2">📝</span>
-                </div>
-                <div>
-                    <h1 class="h4 mb-1 text-white">Crear Nuevo Artículo</h1>
-                    <div class="small text-white-50">Plataforma de gestión de noticias</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+<PageHeader Icon="bi bi-file-earmark-plus"
+            Title="Crear nuevo artículo"
+            Description="Registra una noticia y envíala al flujo editorial para revisión y envío a noticieros.">
+</PageHeader>
 
 <section class="admin-list-section">
     <div class="container">
         <div class="row g-4">
+            <!-- Columna izquierda: resumen / estado -->
             <div class="col-12 col-lg-4">
                 <div class="card shadow-sm border-0 admin-article-card mb-3">
-                  
+                    <div class="card-body">
+                        <h5 class="card-title mb-2 d-flex align-items-center gap-2">
+                            <i class="bi bi-clipboard-data"></i>
+                            <span>Resumen del artículo</span>
+                        </h5>
+
+                        <div class="small mb-2">
+                            <span class="fw-semibold">Título actual:</span><br />
+                            <span>
+                                @(string.IsNullOrWhiteSpace(_model.Title)
+                                                                ? "Sin título"
+                                                                : _model.Title)
+                            </span>
+                        </div>
+
+                        <div class="small mb-2">
+                            <span class="fw-semibold">Contenido:</span><br />
+                            <span>
+                                @(_model.Content?.Length > 0
+                                                                ? $"{_model.Content.Length} caracteres"
+                                                                : "Sin contenido")
+                            </span>
+                        </div>
+
+                        <div class="small mb-2">
+                            <span class="fw-semibold">Referencia:</span><br />
+                            <span>@GetReferenceSummary()</span>
+                        </div>
+
+                        <div class="small text-muted mt-3 d-flex align-items-start gap-2">
+                            <i class="bi bi-person-badge"></i>
+                            <span>
+                                El autor se tomará del usuario autenticado y se asociará al flujo de revisión.
+                            </span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="card shadow-sm border-0 admin-article-card">
                     <div class="card-body">
-                        <h5 class="card-title mb-2">Resumen</h5>
-                        <div class="small mb-1">
-                            <span class="fw-semibold">Título actual:</span>
-                            <span>@(string.IsNullOrWhiteSpace(_model.Title) ? "Sin título" : _model.Title)</span>
-                        </div>
-                        <div class="small mb-1">
-                            <span class="fw-semibold">Contenido:</span>
-                            <span>@(_model.Content?.Length > 0 ? $"{_model.Content.Length} caracteres" : "Sin contenido")</span>
-                        </div>
-                        <div class="small mb-1">
-                            <span class="fw-semibold">Referencia:</span>
-                            <span>@GetReferenceSummary()</span>
-                        </div>
-                        <div class="small text-muted mt-2">
-                            El autor se tomará del usuario autenticado.
-                        </div>
+                        <h6 class="card-title mb-2 d-flex align-items-center gap-2">
+                            <i class="bi bi-lightbulb"></i>
+                            <span>Tips rápidos</span>
+                        </h6>
+                        <ul class="small mb-0">
+                            <li>Usa un título claro y directo.</li>
+                            <li>En el contenido, explica la noticia desde lo más importante a lo menos importante.</li>
+                            <li>Si amplías o corriges otra noticia, selecciona la referencia para enlazarlas.</li>
+                        </ul>
                     </div>
                 </div>
             </div>
 
+            <!-- Columna derecha: formulario principal -->
             <div class="col-12 col-lg-8">
                 <div class="card shadow-sm border-0 admin-article-card">
                     <div class="card-body">
                         @if (!string.IsNullOrWhiteSpace(_successMessage))
                         {
-                            <div class="alert alert-success py-2 px-3 small mb-3">
-                                @_successMessage
+                            <div class="alert alert-success py-2 px-3 small mb-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-check-circle-fill"></i>
+                                <span>@_successMessage</span>
                             </div>
                         }
 
@@ -76,11 +98,20 @@
                             <ValidationSummary class="text-danger small" />
 
                             <div class="mb-3">
-                                <label class="form-label auth-label">Título del Artículo</label>
-                                <InputText class="form-control auth-input" @bind-Value="_model.Title" />
+                                <label class="form-label auth-label">
+                                    Título del artículo
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <InputText class="form-control auth-input"
+                                           @bind-Value="_model.Title"
+                                           placeholder="Ejemplo: Municipio X inaugura nuevo parque tecnológico" />
                             </div>
+
                             <div class="mb-3">
-                                <label class="form-label auth-label">Categoría</label>
+                                <label class="form-label auth-label">
+                                    Categoría
+                                    <span class="text-danger">*</span>
+                                </label>
                                 <InputSelect class="form-select" @bind-Value="_model.CategoryId">
                                     @foreach (var cat in _categories)
                                     {
@@ -90,7 +121,9 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label auth-label">Con</label>
+                                <label class="form-label auth-label">
+                                    Referencia a otra noticia (opcional)
+                                </label>
                                 <InputSelect class="form-select" @bind-Value="_model.ReferencedArticleId">
                                     <option value="">Noticia sin referencia</option>
                                     @foreach (var refArt in _availableReferences)
@@ -98,35 +131,72 @@
                                         <option value="@refArt.Id">@refArt.Title</option>
                                     }
                                 </InputSelect>
+                                <div class="small text-muted mt-1">
+                                    Úsalo si este artículo amplía, corrige o está enlazado a otra noticia previa.
+                                </div>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label auth-label">Contenido del artículo</label>
-                                <InputTextArea class="form-control" style="min-height: 180px;" @bind-Value="_model.Content" />
+                                <label class="form-label auth-label">
+                                    Contenido del artículo
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <InputTextArea class="form-control"
+                                               style="min-height: 200px;"
+                                               @bind-Value="_model.Content"
+                                               placeholder="Escribe aquí el cuerpo completo de la noticia..." />
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label auth-label">Subir Archivo (Imagen, PDF, Documento, Video)</label>
-                                <InputFile OnChange="OnFileChange" />
-                                @if (!string.IsNullOrWhiteSpace(_uploadedFileName))
-                                {
-                                    <div class="small text-muted mt-1">
-                                        Archivo seleccionado: @_uploadedFileName
+                                <label class="form-label auth-label">
+                                    Archivo adjunto (imagen, PDF, documento, video) – opcional
+                                </label>
+                                <div class="upload-dropzone">
+                                    <InputFile class="upload-input" OnChange="OnFileChange" />
+                                    <div class="text-center small text-muted">
+                                        <i class="bi bi-cloud-arrow-up fs-5 d-block mb-1"></i>
+                                        <span>
+                                            Haz clic aquí para seleccionar un archivo (máx. 10 MB)
+                                        </span>
+                                        @if (!string.IsNullOrWhiteSpace(_uploadedFileName))
+                                        {
+                                            <div class="mt-2">
+                                                <span class="fw-semibold">Archivo seleccionado:</span>
+                                                <br />
+                                                @_uploadedFileName
+                                            </div>
+                                        }
                                     </div>
-                                }
+                                </div>
                             </div>
 
                             <div class="d-flex justify-content-between align-items-center mt-4">
-                               
-                                <button type="button" class="btn btn-danger" style="width: auto;" @onclick="Cancel">
+                                <button type="button"
+                                        class="btn btn-outline-danger d-inline-flex align-items-center"
+                                        style="width: auto;"
+                                        @onclick="Cancel">
+                                    <i class="bi bi-x-circle me-1"></i>
                                     Cancelar
                                 </button>
-                                <button type="submit" class="btn btn-primary auth-submit" style="width: auto;" disabled="@_saving">
-                                    Publicar Artículo
+
+                                <button type="submit"
+                                        class="btn btn-primary auth-submit d-inline-flex align-items-center"
+                                        style="width: auto;"
+                                        disabled="@_saving">
+                                    @if (_saving)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"
+                                              role="status"
+                                              aria-hidden="true"></span>
+                                        <span>Enviando...</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-send-fill me-1"></i>
+                                        <span>Publicar artículo</span>
+                                    }
                                 </button>
                             </div>
-
-                   
                         </EditForm>
                     </div>
                 </div>
@@ -156,7 +226,6 @@
 
     private async Task EnsureDefaultPlan()
     {
-
         var defaultPlan = await Db.Plans.OrderBy(p => p.Id).FirstOrDefaultAsync();
         if (defaultPlan != null)
         {
@@ -176,19 +245,22 @@
             })
             .ToListAsync();
     }
+
     private async Task EnsureDefaultCategories()
     {
-        var existingCategories = await Db.Categories.Select(c => c.Name).ToListAsync();
+        var existingCategories = await Db.Categories
+            .Select(c => c.Name)
+            .ToListAsync();
 
         var defaultCategories = new List<string>
-    {
-        "Economía",
-        "Política",
-        "Artes y Cultura",
-        "Tecnología",
-        "Internacionales",
-        "Deportes"
-    };
+        {
+            "Economía",
+            "Política",
+            "Artes y Cultura",
+            "Tecnología",
+            "Internacionales",
+            "Deportes"
+        };
 
         foreach (var categoryName in defaultCategories)
         {
@@ -205,8 +277,6 @@
         await Db.SaveChangesAsync();
     }
 
-   
-   
     private async Task LoadCategories()
     {
         _categories = await Db.Categories
@@ -229,7 +299,9 @@
         var user = authState.User;
 
         var authorName = user.Identity?.Name ?? "Usuario";
-        var authorEmail = user.Claims.FirstOrDefault(c => c.Type == "email")?.Value ?? "";
+        var authorEmail = user.Claims.FirstOrDefault(c => c.Type == "email")?.Value
+                          ?? user.Identity?.Name
+                          ?? "";
 
         string? attachmentPath = null;
         if (_uploadedFile != null)
@@ -295,8 +367,12 @@
         if (!_model.ReferencedArticleId.HasValue)
             return "Sin referencia.";
 
-        var item = _availableReferences.FirstOrDefault(r => r.Id == _model.ReferencedArticleId.Value);
-        return item == null ? "Referencia seleccionada." : item.Title;
+        var item = _availableReferences
+            .FirstOrDefault(r => r.Id == _model.ReferencedArticleId.Value);
+
+        return item == null
+            ? "Referencia seleccionada."
+            : item.Title;
     }
 
     private sealed class ArticleCreateModel

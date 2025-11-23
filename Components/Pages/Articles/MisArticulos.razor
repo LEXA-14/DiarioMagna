@@ -5,25 +5,15 @@
 @using DiarioMagna.Data
 @using DiarioMagna.Domain.Models
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Authorization
+@using DiarioMagna.Components.Shared
+
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
-@using Microsoft.AspNetCore.Components.Authorization
 
-<section class="admin-hero">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-            <div class="d-flex align-items-center">
-                <div class="admin-hero-icon me-3">
-                    <span class="fs-2">📚</span>
-                </div>
-                <div>
-                    <h1 class="h4 mb-1 text-white">Mis artículos</h1>
-                    <div class="small text-white-50">Listado de noticias registradas por el usuario actual</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+<PageHeader Icon="bi bi-journal-text"
+            Title="Mis artículos"
+            Description="Listado de noticias registradas por el usuario actual" />
 
 <section class="admin-list-section">
     <div class="container">
@@ -45,7 +35,6 @@
                 <div class="card-body">
                     <div class="row g-2 align-items-end">
                         <div class="col-12 col-md-6">
-                           
                             <label class="form-label small mb-1">Buscar</label>
                             <input class="form-control form-control-sm"
                                    @bind="_search"

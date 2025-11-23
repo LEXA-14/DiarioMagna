@@ -10,25 +10,14 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Hosting
+@using DiarioMagna.Components.Shared
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
 @inject IWebHostEnvironment Env
 
-<section class="admin-hero">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-            <div class="d-flex align-items-center">
-                <div class="admin-hero-icon me-3">
-                    <span class="fs-2">📰</span>
-                </div>
-                <div>
-                    <h1 class="h4 mb-1 text-white">Revisión de Artículo</h1>
-                    <div class="small text-white-50">Relaciones Públicas · Aprobación de noticias</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+<PageHeader Icon="bi bi-journal-text"
+            Title="Revisión de artículo"
+            Description="Relaciones Públicas · Aprobación de noticias" />
 
 <section class="admin-list-section">
     <div class="container">
@@ -48,7 +37,7 @@
                 <div class="col-12 col-lg-4">
                     <div class="card shadow-sm border-0 admin-article-card mb-3">
                         <div class="card-body">
-                            <h5 class="card-title mb-2">Información del Autor</h5>
+                            <h5 class="card-title mb-2">Información del autor</h5>
                             <div class="small mb-1">
                                 <span class="fw-semibold">Autor:</span> @_model.AuthorName
                             </div>
@@ -110,7 +99,7 @@
                                 <ValidationSummary class="text-danger small" />
 
                                 <div class="mb-3">
-                                    <label class="form-label auth-label">Título del Artículo</label>
+                                    <label class="form-label auth-label">Título del artículo</label>
                                     <InputText class="form-control auth-input" @bind-Value="_model.Title" />
                                 </div>
 
