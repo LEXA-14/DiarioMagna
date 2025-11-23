@@ -13,8 +13,10 @@
 <PageTitle>Iniciar sesión</PageTitle>
 
 <div class="auth-page">
-    <div class="auth-card">
+
+    <div class="auth-card fade-in">
         <div class="auth-icon">📰</div>
+
         <h1 class="auth-title">Diario Magna Publicadora</h1>
         <p class="auth-subtitle">Inicia sesión para continuar</p>
 
@@ -22,34 +24,51 @@
 
         <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
             <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
+            <ValidationSummary class="text-danger small mb-2" role="alert" />
 
             <div class="mb-3">
                 <label for="Input_Email" class="form-label auth-label">Correo electrónico</label>
-                <InputText @bind-Value="Input.Email" id="Input_Email" class="form-control auth-input" autocomplete="username" aria-required="true" placeholder="tucorreo@ejemplo.com" />
+                <InputText id="Input_Email" class="form-control auth-input"
+                           @bind-Value="Input.Email"
+                           autocomplete="username"
+                           aria-required="true"
+                           placeholder="tucorreo@ejemplo.com" />
                 <ValidationMessage For="() => Input.Email" class="text-danger small" />
             </div>
 
             <div class="mb-3">
                 <label for="Input_Password" class="form-label auth-label">Contraseña</label>
-                <InputText type="password" @bind-Value="Input.Password" id="Input_Password" class="form-control auth-input" autocomplete="current-password" aria-required="true" placeholder="********" />
+                <InputText id="Input_Password" class="form-control auth-input"
+                           type="password"
+                           @bind-Value="Input.Password"
+                           autocomplete="current-password"
+                           aria-required="true"
+                           placeholder="********" />
                 <ValidationMessage For="() => Input.Password" class="text-danger small" />
             </div>
 
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <label class="form-check-label small">
+            <div class="d-flex justify-content-between align-items-center mb-3 small">
+                <label class="form-check-label">
                     <InputCheckbox @bind-Value="Input.RememberMe" class="form-check-input me-1" />
                     Recordarme
                 </label>
-                <a href="Account/ForgotPassword" class="small">¿Olvidaste tu contraseña?</a>
+
+                <a class="link-light small" href="/Account/ForgotPassword">
+                    ¿Olvidaste tu contraseña?
+                </a>
             </div>
 
-            <button type="submit" class="btn btn-primary auth-submit">Iniciar sesión</button>
+            <button type="submit" class="btn btn-primary auth-submit w-100">
+                Iniciar sesión
+            </button>
         </EditForm>
     </div>
 
-    <div class="auth-links">
-        <span class="small">¿No tienes cuenta? <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Regístrate aquí</a></span>
+    <div class="auth-links fade-in-delayed">
+        <span class="small">
+            ¿No tienes cuenta?
+            <a href="/Account/Register" class="link-light">Regístrate aquí</a>
+        </span>
     </div>
 </div>
 
@@ -68,14 +87,17 @@
     protected override async Task OnInitializedAsync()
     {
         if (HttpMethods.IsGet(HttpContext.Request.Method))
-        {
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
-        }
     }
 
     public async Task LoginUser()
     {
-        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        var result = await SignInManager.PasswordSignInAsync(
+            Input.Email,
+            Input.Password,
+            Input.RememberMe,
+            lockoutOnFailure: false);
+
         if (result.Succeeded)
         {
             Logger.LogInformation("User logged in.");
@@ -100,12 +122,10 @@
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
+        [Required, EmailAddress]
         public string Email { get; set; } = "";
 
-        [Required]
-        [DataType(DataType.Password)]
+        [Required, DataType(DataType.Password)]
         public string Password { get; set; } = "";
 
         public bool RememberMe { get; set; }
