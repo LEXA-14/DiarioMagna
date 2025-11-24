@@ -11,9 +11,10 @@
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
 @inject INoticieroEmailService noticieroEmailService
+@inject LayoutHeaderState HeaderState
 
 <PageHeader Icon="bi bi-send-check"
-            Title="Panel de Envíos"
+            Title="Panel de envíos"
             Description="Selecciona los noticieros a los que se enviará cada artículo aprobado" />
 
 <section class="admin-list-section">
@@ -26,129 +27,193 @@
         }
         else if (!_noticieros.Any())
         {
-            <div class="alert alert-warning">
+            <div class="alert alert-warning admin-article-card">
                 No hay noticieros activos configurados. Registre al menos un noticiero para poder realizar envíos.
             </div>
         }
         else if (!_articles.Any())
         {
-            <div class="alert alert-info">
+            <div class="alert alert-info admin-article-card">
                 No hay artículos aprobados para enviar.
             </div>
         }
         else
         {
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="small text-muted">
-                    Artículos aprobados: @_articles.Count
-                </div>
-                <div class="small text-muted">
-                    Noticieros activos: @_noticieros.Count
+            <div class="card shadow-sm border-0 admin-article-card mb-3">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div class="small text-muted">
+                        Artículos aprobados: @_articles.Count
+                    </div>
+                    <div class="small text-muted text-end">
+                        Mostrando: @FilteredArticles.Count() · Noticieros activos: @_noticieros.Count
+                    </div>
                 </div>
             </div>
 
-            <div class="row g-3">
-                @foreach (var item in _articles)
-                {
-                    <div class="col-12">
-                        <div class="card shadow-sm border-0 admin-article-card">
-                            <div class="card-body">
-                                <div class="d-flex flex-column flex-md-row gap-3">
-                                    <div class="envio-thumb">
-                                        @if (!string.IsNullOrWhiteSpace(item.AttachmentPath))
-                                        {
-                                            <img src="@item.AttachmentPath"
-                                                 class="img-fluid rounded"
-                                                 style="max-height: 120px; object-fit: cover; min-width: 160px;"
-                                                 alt="Imagen del artículo" />
-                                        }
-                                        else
-                                        {
-                                            <div class="d-flex align-items-center justify-content-center bg-light rounded"
-                                                 style="height: 120px; min-width: 160px;">
-                                                <span class="text-muted small">Sin imagen</span>
-                                            </div>
-                                        }
-                                    </div>
+            <div class="card shadow-sm border-0 admin-article-card mb-3">
+                <div class="card-body">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small mb-1">Buscar</label>
+                            <input class="form-control form-control-sm"
+                                   @bind="_search"
+                                   placeholder="Buscar por título o autor..." />
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label small mb-1">Categoría</label>
+                            <select class="form-select form-select-sm" @bind="_categoryFilter">
+                                <option value="Todos">Todas</option>
+                                @foreach (var cat in _categoryOptions)
+                                {
+                                    <option value="@cat">@cat</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label small mb-1">Plan</label>
+                            <select class="form-select form-select-sm" @bind="_planFilter">
+                                <option value="Todos">Todos</option>
+                                @foreach (var plan in _planOptions)
+                                {
+                                    <option value="@plan">@plan</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <label class="form-label small mb-1">Noticiero</label>
+                            <select class="form-select form-select-sm" @bind="_noticieroFilterId">
+                                <option value="0">Todos</option>
+                                @foreach (var n in _noticieros)
+                                {
+                                    <option value="@n.Id">@n.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                                    <div class="flex-grow-1">
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <div>
-                                                <h5 class="mb-1">@item.Title</h5>
-                                                <div class="small text-muted">
-                                                    @item.AuthorName · @item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+            @if (!FilteredArticles.Any())
+            {
+                <div class="alert alert-info admin-article-card">
+                    No hay artículos que coincidan con los filtros seleccionados.
+                </div>
+            }
+            else
+            {
+                <div class="row g-3">
+                    @foreach (var item in FilteredArticles)
+                    {
+                        <div class="col-12">
+                            <div class="card shadow-sm border-0 admin-article-card">
+                                <div class="card-body">
+                                    <div class="d-flex flex-column flex-md-row gap-3">
+                                        <div class="envio-thumb">
+                                            @if (!string.IsNullOrWhiteSpace(item.AttachmentPath))
+                                            {
+                                                <img src="@item.AttachmentPath"
+                                                     class="img-fluid rounded"
+                                                     style="max-height: 120px; object-fit: cover; min-width: 160px;"
+                                                     alt="Imagen del artículo" />
+                                            }
+                                            else
+                                            {
+                                                <div class="d-flex align-items-center justify-content-center bg-light rounded"
+                                                     style="height: 120px; min-width: 160px;">
+                                                    <span class="text-muted small">Sin imagen</span>
                                                 </div>
-                                                <div class="small text-muted">
-                                                    Categoría: @item.CategoryName
-                                                    @if (!string.IsNullOrWhiteSpace(item.PlanName))
+                                            }
+                                        </div>
+
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div>
+                                                    <h5 class="mb-1">@item.Title</h5>
+                                                    <div class="small text-muted">
+                                                        @item.AuthorName · @item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                                    </div>
+                                                    <div class="small text-muted">
+                                                        Categoría: @item.CategoryName
+                                                        @if (!string.IsNullOrWhiteSpace(item.PlanName))
+                                                        {
+                                                            <span> · Plan: @item.PlanName</span>
+                                                        }
+                                                    </div>
+                                                    <div class="small mt-1">
+                                                        <span class="fw-semibold">Envíos actuales:</span>
+                                                        @if (item.Noticieros.Count(n => n.Selected) == 0)
+                                                        {
+                                                            <span class="text-muted">Sin envíos</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-success">
+                                                                @item.Noticieros.Count(n => n.Selected) noticiero(s)
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex flex-column gap-2">
+                                                    <button class="btn btn-outline-primary btn-sm"
+                                                            @onclick="@(() => ViewArticle(item.Id))">
+                                                        <i class="bi bi-eye me-1"></i>
+                                                        Ver artículo completo
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <div class="small fw-semibold mb-1">
+                                                    Selecciona los noticieros de destino
+                                                </div>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    @foreach (var n in item.Noticieros)
                                                     {
-                                                        <span> · Plan: @item.PlanName</span>
+                                                        <div class="form-check form-check-inline envio-noticiero-chip">
+                                                            <input class="form-check-input"
+                                                                   type="checkbox"
+                                                                   id="@($"art{item.Id}-not{n.Id}")"
+                                                                   checked="@n.Selected"
+                                                                   @onchange="e => ToggleNoticiero(item, n.Id, e)" />
+                                                            <label class="form-check-label small" for="@($"art{item.Id}-not{n.Id}")">
+                                                                @n.Name
+                                                            </label>
+                                                        </div>
                                                     }
                                                 </div>
-                                                <div class="small mt-1">
-                                                    <span class="fw-semibold">Envíos actuales:</span>
-                                                    @if (item.Noticieros.Count(n => n.Selected) == 0)
+                                            </div>
+
+                                            <div class="d-flex justify-content-end mt-3">
+                                                <button class="btn btn-primary btn-sm"
+                                                        disabled="@item.Saving"
+                                                        @onclick="() => SaveEnvios(item)">
+                                                    @if (item.Saving)
                                                     {
-                                                        <span class="text-muted">Sin envíos</span>
+                                                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                                        <span>Guardando...</span>
                                                     }
                                                     else
                                                     {
-                                                        <span class="badge bg-success">
-                                                            @item.Noticieros.Count(n => n.Selected) noticiero(s)
-                                                        </span>
+                                                        <span class="bi bi-save me-1"></span>
+                                                        <span>Guardar envíos</span>
                                                     }
-                                                </div>
-                                            </div>
-                                            <div class="d-flex flex-column gap-2">
-                                                <button class="btn btn-outline-primary btn-sm"
-                                                        @onclick="@(() => ViewArticle(item.Id))">
-                                                    Ver artículo completo
                                                 </button>
                                             </div>
-                                        </div>
 
-                                        <div class="mb-2">
-                                            <div class="small fw-semibold mb-1">
-                                                Selecciona los noticieros de destino
-                                            </div>
-                                            <div class="d-flex flex-wrap gap-2">
-                                                @foreach (var n in item.Noticieros)
-                                                {
-                                                    <div class="form-check form-check-inline envio-noticiero-chip">
-                                                        <input class="form-check-input"
-                                                               type="checkbox"
-                                                               id="@($"art{item.Id}-not{n.Id}")"
-                                                               checked="@n.Selected"
-                                                               @onchange="e => ToggleNoticiero(item, n.Id, e)" />
-                                                        <label class="form-check-label small" for="@($"art{item.Id}-not{n.Id}")">
-                                                            @n.Name
-                                                        </label>
-                                                    </div>
-                                                }
-                                            </div>
+                                            @if (!string.IsNullOrWhiteSpace(item.Message))
+                                            {
+                                                <div class="small text-success mt-2">
+                                                    @item.Message
+                                                </div>
+                                            }
                                         </div>
-
-                                        <div class="d-flex justify-content-end mt-3">
-                                            <button class="btn btn-primary btn-sm"
-                                                    disabled="@item.Saving"
-                                                    @onclick="() => SaveEnvios(item)">
-                                                @(item.Saving ? "Guardando..." : "Guardar envíos")
-                                            </button>
-                                        </div>
-
-                                        @if (!string.IsNullOrWhiteSpace(item.Message))
-                                        {
-                                            <div class="small text-success mt-2">
-                                                @item.Message
-                                            </div>
-                                        }
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                }
-            </div>
+                    }
+                </div>
+            }
         }
     </div>
 </section>
@@ -156,10 +221,21 @@
 @code {
     private List<NoticieroItem> _noticieros = new();
     private List<ArticleEnvioItem> _articles = new();
+    private List<string> _categoryOptions = new();
+    private List<string> _planOptions = new();
     private bool _loading = true;
+
+    private string _search = "";
+    private string _categoryFilter = "Todos";
+    private string _planFilter = "Todos";
+    private int _noticieroFilterId = 0;
+
+    private IEnumerable<ArticleEnvioItem> FilteredArticles => GetFilteredArticles();
 
     protected override async Task OnInitializedAsync()
     {
+        HeaderState.Set("bi bi-send-check", "Panel de envíos", "Selecciona los noticieros a los que se enviará cada artículo aprobado");
+
         var noticieros = await Db.Noticieros
             .Where(n => n.IsActive)
             .OrderBy(n => n.Name)
@@ -206,7 +282,51 @@
             _articles.Add(item);
         }
 
+        _categoryOptions = _articles
+            .Select(a => a.CategoryName)
+            .Distinct()
+            .OrderBy(x => x)
+            .ToList();
+
+        _planOptions = _articles
+            .Select(a => a.PlanName)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Distinct()
+            .OrderBy(x => x)
+            .ToList();
+
         _loading = false;
+    }
+
+    private IEnumerable<ArticleEnvioItem> GetFilteredArticles()
+    {
+        IEnumerable<ArticleEnvioItem> query = _articles;
+
+        if (!string.IsNullOrWhiteSpace(_search))
+        {
+            var s = _search.Trim().ToLowerInvariant();
+            query = query.Where(i =>
+                i.Title.ToLowerInvariant().Contains(s) ||
+                i.AuthorName.ToLowerInvariant().Contains(s));
+        }
+
+        if (_categoryFilter != "Todos")
+        {
+            query = query.Where(i => i.CategoryName == _categoryFilter);
+        }
+
+        if (_planFilter != "Todos")
+        {
+            query = query.Where(i => i.PlanName == _planFilter);
+        }
+
+        if (_noticieroFilterId != 0)
+        {
+            query = query.Where(i =>
+                i.Noticieros.Any(n => n.Id == _noticieroFilterId && n.Selected));
+        }
+
+        return query;
     }
 
     private void ViewArticle(int articleId)

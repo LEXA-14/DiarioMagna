@@ -7,11 +7,12 @@
 @using Microsoft.EntityFrameworkCore
 @using DiarioMagna.Components.Shared
 
+@inject LayoutHeaderState HeaderState
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
 
 <PageHeader Icon="bi bi-journal-check"
-            Title="Panel de Solicitudes"
+            Title="Panel de solicitudes"
             Description="Revisa, aprueba o rechaza los artículos enviados por secretaría" />
 
 <section class="admin-list-section">
@@ -24,13 +25,13 @@
         }
         else if (!_items.Any())
         {
-            <div class="alert alert-info mt-3">
+            <div class="alert alert-info mt-3 admin-article-card">
                 No hay artículos para mostrar con los filtros seleccionados.
             </div>
         }
         else
         {
-            <div class="card shadow-sm border-0 mb-3">
+            <div class="card shadow-sm border-0 admin-article-card mb-3">
                 <div class="card-body">
                     <div class="row g-2 align-items-end">
                         <div class="col-12 col-md-4">
@@ -69,13 +70,13 @@
                                         {
                                             <img src="@item.AttachmentPath"
                                                  class="img-fluid rounded"
-                                                 style="max-height: 100px; object-fit: cover; min-width: 140px;"
+                                                 style="max-height: 110px; object-fit: cover; min-width: 150px;"
                                                  alt="Imagen del artículo" />
                                         }
                                         else
                                         {
                                             <div class="d-flex align-items-center justify-content-center bg-light rounded"
-                                                 style="height: 100px; min-width: 140px;">
+                                                 style="height: 110px; min-width: 150px;">
                                                 <span class="text-muted small">Sin imagen</span>
                                             </div>
                                         }
@@ -112,19 +113,41 @@
                                         <div class="d-flex flex-wrap gap-2 justify-content-end">
                                             <button class="btn btn-outline-secondary btn-sm"
                                                     @onclick="() => ViewArticle(item.Id)">
+                                                <i class="bi bi-eye me-1"></i>
                                                 Ver artículo
                                             </button>
                                             <button class="btn btn-outline-primary btn-sm"
                                                     @onclick="() => EditArticle(item.Id)">
+                                                <i class="bi bi-pencil-square me-1"></i>
                                                 Editar
                                             </button>
                                             <button class="btn btn-success btn-sm"
+                                                    disabled="@item.Saving"
                                                     @onclick="() => ChangeStatus(item, ArticleStatus.Aprobado)">
-                                                Aprobar
+                                                @if (item.Saving)
+                                                {
+                                                    <span class="spinner-border spinner-border-sm me-1"></span>
+                                                    <span>Guardando...</span>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-check-circle me-1"></i>
+                                                    <span>Aprobar</span>
+                                                }
                                             </button>
                                             <button class="btn btn-danger btn-sm"
+                                                    disabled="@item.Saving"
                                                     @onclick="() => ChangeStatus(item, ArticleStatus.Rechazado)">
-                                                Rechazar
+                                                @if (item.Saving)
+                                                {
+                                                    <span class="spinner-border spinner-border-sm me-1"></span>
+                                                    <span>Guardando...</span>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-x-circle me-1"></i>
+                                                    <span>Rechazar</span>
+                                                }
                                             </button>
                                         </div>
 
@@ -153,6 +176,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        HeaderState.Set("bi bi-journal-check", "Panel de solicitudes", "Revisa, aprueba o rechaza los artículos enviados por secretaría");
+
         var query = Db.Articles
             .Include(a => a.Category)
             .Include(a => a.Plan)
@@ -183,10 +208,10 @@
 
         if (!string.IsNullOrWhiteSpace(_search))
         {
-            var s = _search.Trim().ToLower();
+            var s = _search.Trim().ToLowerInvariant();
             query = query.Where(i =>
-                i.Title.ToLower().Contains(s) ||
-                i.AuthorName.ToLower().Contains(s));
+                i.Title.ToLowerInvariant().Contains(s) ||
+                i.AuthorName.ToLowerInvariant().Contains(s));
         }
 
         if (_statusFilter != "Todos" &&

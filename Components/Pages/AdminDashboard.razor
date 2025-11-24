@@ -1,23 +1,15 @@
 ﻿@page "/admin"
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "Administrador")]
-@inject NavigationManager Navigation
 
-<section class="admin-hero">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-            <div class="d-flex align-items-center">
-                <div class="admin-hero-icon me-3">
-                    <span class="fs-2">⚙️</span>
-                </div>
-                <div>
-                    <h1 class="h4 mb-1 text-white">Panel de administración</h1>
-                    <div class="small text-white-50">Accesos rápidos a las secciones del sistema</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+@using DiarioMagna.Components.Shared
+
+@inject NavigationManager Navigation
+@inject LayoutHeaderState HeaderState
+
+<PageHeader Icon="bi bi-speedometer2"
+            Title="Panel de administración"
+            Description="Accesos rápidos a las secciones clave del sistema" />
 
 <section class="admin-list-section">
     <div class="container">
@@ -26,8 +18,11 @@
                 <div class="card shadow-sm border-0 admin-article-card">
                     <div class="card-body">
                         <h5 class="card-title">Solicitudes de artículos</h5>
-                       
-                        <button class="btn btn-primary btn-sm" @onclick="GoSolicitudes">
+                        <p class="small text-muted mb-3">
+                            Revisa, aprueba o rechaza los artículos enviados por secretaría.
+                        </p>
+                        <button class="btn btn-primary btn-sm d-inline-flex align-items-center" @onclick="GoSolicitudes">
+                            <i class="bi bi-journal-check me-1"></i>
                             Ir al panel de solicitudes
                         </button>
                     </div>
@@ -37,10 +32,11 @@
                 <div class="card shadow-sm border-0 admin-article-card">
                     <div class="card-body">
                         <h5 class="card-title">Panel de envíos</h5>
-                        <p class="small text-muted">
-                            Seleccionar los noticieros a los que se enviarán los artículos aprobados.
+                        <p class="small text-muted mb-3">
+                            Selecciona los noticieros a los que se enviarán los artículos aprobados.
                         </p>
-                        <button class="btn btn-primary btn-sm" @onclick="GoEnvios">
+                        <button class="btn btn-primary btn-sm d-inline-flex align-items-center" @onclick="GoEnvios">
+                            <i class="bi bi-send-check me-1"></i>
                             Ir al panel de envíos
                         </button>
                     </div>
@@ -50,10 +46,11 @@
                 <div class="card shadow-sm border-0 admin-article-card">
                     <div class="card-body">
                         <h5 class="card-title">Noticieros</h5>
-                        <p class="small text-muted">
-                            Administrar los noticieros disponibles para publicación.
+                        <p class="small text-muted mb-3">
+                            Administra los noticieros disponibles para publicación.
                         </p>
-                        <button class="btn btn-primary btn-sm" @onclick="GoNoticieros">
+                        <button class="btn btn-primary btn-sm d-inline-flex align-items-center" @onclick="GoNoticieros">
+                            <i class="bi bi-broadcast-pin me-1"></i>
                             Ir a noticieros
                         </button>
                     </div>
@@ -64,6 +61,11 @@
 </section>
 
 @code {
+    protected override void OnInitialized()
+    {
+        HeaderState.Set("bi bi-speedometer2", "Panel de administración", "Accesos rápidos a las secciones clave del sistema");
+    }
+
     private void GoSolicitudes()
     {
         Navigation.NavigateTo("/admin/solicitudes");
