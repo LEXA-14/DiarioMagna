@@ -4,7 +4,7 @@
 <div class="sidebar-layout">
     <div class="sidebar-header">
         <div class="sidebar-logo">
-            <span class="fs-4 text-white">📰</span>
+            <i class="bi bi-newspaper"></i>
         </div>
         <div class="sidebar-title">
             <div class="text-white fw-semibold">Diario Magna</div>
@@ -15,17 +15,43 @@
     <div class="sidebar-menu">
         <nav class="nav flex-column">
 
+            <div class="sidebar-section-caption">
+                Principal
+            </div>
+
             <NavLink class="nav-link sidebar-link" href="/" Match="NavLinkMatch.All">
-                <span class="me-2 bi bi-house-door-fill-nav-menu"></span>
+                <span class="sidebar-icon">
+                    <i class="bi bi-house-fill"></i>
+                </span>
                 <span>Inicio</span>
             </NavLink>
 
             @if (IsAuthenticated)
             {
+                @if (IsAdmin)
+                {
+                    <div class="sidebar-section-caption mt-3">
+                        Administración
+                    </div>
+
+                    <NavLink class="nav-link sidebar-link" href="/admin/user-roles">
+                        <span class="sidebar-icon">
+                            <i class="bi bi-shield-lock-fill"></i>
+                        </span>
+                        <span>Gestión de roles</span>
+                    </NavLink>
+                }
+
+                <div class="sidebar-section-caption @(IsAdmin ? "" : "mt-3")">
+                    Noticias
+                </div>
+
                 @if (IsSecretaria || IsAdmin)
                 {
                     <NavLink class="nav-link sidebar-link" href="/articles/create">
-                        <span class="me-2 bi bi-file-earmark-plus"></span>
+                        <span class="sidebar-icon">
+                            <i class="bi bi-file-earmark-plus-fill"></i>
+                        </span>
                         <span>Crear artículo</span>
                     </NavLink>
                 }
@@ -33,7 +59,9 @@
                 @if (IsRelaciones || IsSecretaria || IsEncargado || IsAdmin)
                 {
                     <NavLink class="nav-link sidebar-link" href="/mis-articulos">
-                        <span class="me-2 bi bi-journal-text"></span>
+                        <span class="sidebar-icon">
+                            <i class="bi bi-collection-fill"></i>
+                        </span>
                         <span>Mis artículos</span>
                     </NavLink>
                 }
@@ -41,7 +69,9 @@
                 @if (IsRelaciones || IsAdmin)
                 {
                     <NavLink class="nav-link sidebar-link" href="/admin/solicitudes">
-                        <span class="me-2 bi bi-inboxes"></span>
+                        <span class="sidebar-icon">
+                            <i class="bi bi-inboxes-fill"></i>
+                        </span>
                         <span>Panel de solicitudes</span>
                     </NavLink>
                 }
@@ -49,12 +79,16 @@
                 @if (IsEncargado || IsAdmin)
                 {
                     <NavLink class="nav-link sidebar-link" href="/admin/envios">
-                        <span class="me-2 bi bi-send-check"></span>
+                        <span class="sidebar-icon">
+                            <i class="bi bi-send-check-fill"></i>
+                        </span>
                         <span>Panel de envíos</span>
                     </NavLink>
 
                     <NavLink class="nav-link sidebar-link" href="/admin/noticieros">
-                        <span class="me-2 bi bi-broadcast-pin"></span>
+                        <span class="sidebar-icon">
+                            <i class="bi bi-broadcast-pin"></i>
+                        </span>
                         <span>Noticieros</span>
                     </NavLink>
                 }
@@ -65,9 +99,20 @@
     <div class="sidebar-footer">
         @if (IsAuthenticated)
         {
-            <form action="/app/logout" method="post" class="mt-2">
+            <div class="sidebar-user d-flex align-items-start mb-3">
+                <div class="sidebar-user-icon">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-name">@UserName</div>
+                    <div class="sidebar-user-roles">@UserRolesText</div>
+                </div>
+            </div>
+
+            <form action="/app/logout" method="post">
                 <AntiforgeryToken />
-                <button type="submit" class="btn btn-outline-light btn-sm w-100">
+                <button type="submit" class="btn btn-outline-light btn-sm w-100 sidebar-logout-btn">
+                    <i class="bi bi-box-arrow-right me-2"></i>
                     Cerrar sesión
                 </button>
             </form>
@@ -76,9 +121,11 @@
         {
             <div class="d-grid gap-2">
                 <NavLink class="btn btn-light btn-sm" href="/Account/Login">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>
                     Iniciar sesión
                 </NavLink>
                 <NavLink class="btn btn-outline-light btn-sm" href="/Account/Register">
+                    <i class="bi bi-person-plus me-1"></i>
                     Registrarse
                 </NavLink>
             </div>

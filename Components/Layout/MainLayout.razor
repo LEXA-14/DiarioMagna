@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@inject LayoutHeaderState HeaderState
 
 <div class="page">
     <div class="sidebar">
@@ -6,14 +7,21 @@
     </div>
 
     <main>
-        <div class="top-row px-4 d-flex justify-content-between align-items-center">
-            <div class="small text-muted">
-                Diario Magna · Sistema de flujo de noticias
+        <header class="top-row px-4 d-flex align-items-center">
+            <div class="top-brand d-flex align-items-center gap-2">
+                <div class="top-brand-icon">
+                    <i class="@HeaderState.IconClass"></i>
+                </div>
+                <div class="top-brand-text">
+                    <div class="text-uppercase fw-semibold">
+                        @HeaderState.Title
+                    </div>
+                    <div class="text-white-50 small d-none d-sm-block">
+                        @HeaderState.Subtitle
+                    </div>
+                </div>
             </div>
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank" class="small">
-                Documentación ASP.NET Core
-            </a>
-        </div>
+        </header>
 
         <article class="content px-4">
             @Body
@@ -26,3 +34,15 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        HeaderState.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        HeaderState.OnChange -= StateHasChanged;
+    }
+}

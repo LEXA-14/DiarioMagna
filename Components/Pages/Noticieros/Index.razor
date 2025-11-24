@@ -1,27 +1,19 @@
 ﻿@page "/admin/noticieros"
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "EncargadoSistema,Administrador")]
+
 @using DiarioMagna.Data
 @using DiarioMagna.Domain.Models
 @using Microsoft.EntityFrameworkCore
 @using System.ComponentModel.DataAnnotations
-@inject ApplicationDbContext Db
+@using DiarioMagna.Components.Shared
 
-<section class="admin-hero">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-            <div class="d-flex align-items-center">
-                <div class="admin-hero-icon me-3">
-                    <span class="fs-2">📡</span>
-                </div>
-                <div>
-                    <h1 class="h4 mb-1 text-white">Gestión de Noticieros</h1>
-                    <div class="small text-white-50">Administre los noticieros a los que se envían los artículos</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+@inject ApplicationDbContext Db
+@inject LayoutHeaderState HeaderState
+
+<PageHeader Icon="bi bi-broadcast"
+            Title="Gestión de noticieros"
+            Description="Administre los noticieros a los que se envían los artículos" />
 
 <section class="admin-list-section">
     <div class="container">
@@ -29,8 +21,13 @@
             <div class="col-12 col-lg-5">
                 <div class="card shadow-sm border-0 admin-article-card">
                     <div class="card-body">
-                        <h5 class="card-title mb-1">@(_isEditing ? "Editar Noticiero" : "Nuevo Noticiero")</h5>
-                        <p class="small text-muted mb-3">Complete la información y guarde para actualizar la lista.</p>
+                        <h5 class="card-title mb-1 d-flex align-items-center gap-2">
+                            <i class="bi bi-broadcast-pin"></i>
+                            <span>@(_isEditing ? "Editar noticiero" : "Nuevo noticiero")</span>
+                        </h5>
+                        <p class="small text-muted mb-3">
+                            Complete la información y guarde para actualizar la lista de noticieros disponibles en los envíos.
+                        </p>
 
                         @if (!string.IsNullOrWhiteSpace(_statusMessage))
                         {
@@ -44,44 +41,77 @@
                             <ValidationSummary class="text-danger small" />
 
                             <div class="mb-3">
-                                <label class="form-label auth-label" for="Noticiero_Name">Nombre del Noticiero</label>
-                                <InputText id="Noticiero_Name" class="form-control auth-input" @bind-Value="_model.Name" />
+                                <label class="form-label auth-label" for="Noticiero_Name">
+                                    Nombre del noticiero
+                                </label>
+                                <InputText id="Noticiero_Name"
+                                           class="form-control auth-input"
+                                           @bind-Value="_model.Name" />
                                 <ValidationMessage For="() => _model.Name" class="text-danger small" />
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label auth-label" for="Noticiero_City">Ciudad</label>
-                                <InputText id="Noticiero_City" class="form-control auth-input" @bind-Value="_model.City" />
+                                <label class="form-label auth-label" for="Noticiero_City">
+                                    Ciudad
+                                </label>
+                                <InputText id="Noticiero_City"
+                                           class="form-control auth-input"
+                                           @bind-Value="_model.City" />
                                 <ValidationMessage For="() => _model.City" class="text-danger small" />
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label auth-label" for="Noticiero_Email">Correo de contacto</label>
-                                <InputText id="Noticiero_Email" class="form-control auth-input" @bind-Value="_model.ContactEmail" />
+                                <label class="form-label auth-label" for="Noticiero_Email">
+                                    Correo de contacto
+                                </label>
+                                <InputText id="Noticiero_Email"
+                                           class="form-control auth-input"
+                                           @bind-Value="_model.ContactEmail" />
                                 <ValidationMessage For="() => _model.ContactEmail" class="text-danger small" />
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label auth-label" for="Noticiero_Phone">Teléfono de contacto</label>
-                                <InputText id="Noticiero_Phone" class="form-control auth-input" @bind-Value="_model.ContactPhone" />
+                                <label class="form-label auth-label" for="Noticiero_Phone">
+                                    Teléfono de contacto
+                                </label>
+                                <InputText id="Noticiero_Phone"
+                                           class="form-control auth-input"
+                                           @bind-Value="_model.ContactPhone" />
                                 <ValidationMessage For="() => _model.ContactPhone" class="text-danger small" />
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-check-label small">
-                                    <InputCheckbox class="form-check-input me-1" @bind-Value="_model.IsActive" />
-                                    Noticiero activo
+                                <label class="form-check-label small d-flex align-items-center gap-1">
+                                    <InputCheckbox class="form-check-input" @bind-Value="_model.IsActive" />
+                                    <span>Noticiero activo</span>
                                 </label>
                             </div>
 
                             <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary auth-submit" disabled="@_isSaving">
-                                    @(_isEditing ? "Guardar cambios" : "Guardar noticiero")
+                                <button type="submit"
+                                        class="btn btn-primary auth-submit d-inline-flex align-items-center"
+                                        style="width:auto;"
+                                        disabled="@_isSaving">
+                                    @if (_isSaving)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                        <span>Guardando...</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-save me-1"></i>
+                                        <span>@(_isEditing ? "Guardar cambios" : "Guardar noticiero")</span>
+                                    }
                                 </button>
+
                                 @if (_isEditing)
                                 {
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="NewNoticiero">
-                                        Cancelar
+                                    <button type="button"
+                                            class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center"
+                                            @onclick="NewNoticiero"
+                                            disabled="@_isSaving">
+                                        <i class="bi bi-x-circle me-1"></i>
+                                        <span>Cancelar</span>
                                     </button>
                                 }
                             </div>
@@ -94,8 +124,14 @@
                 <div class="card shadow-sm border-0 admin-article-card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0">Listado de Noticieros</h5>
-                            <span class="small text-muted">Total: @_noticieros.Count</span>
+                            <h5 class="card-title mb-0 d-flex align-items-center gap-2">
+                                <i class="bi bi-list-ul"></i>
+                                <span>Listado de noticieros</span>
+                            </h5>
+                            <div class="text-end small text-muted">
+                                <div>Total: @_noticieros.Count</div>
+                                <div>Activos: @_noticieros.Count(n => n.IsActive)</div>
+                            </div>
                         </div>
 
                         @if (_loading)
@@ -116,12 +152,12 @@
                                 <table class="table table-sm align-middle mb-0">
                                     <thead>
                                         <tr class="small text-muted">
-                                            <th style="width: 5%;">#</th>
+                                            <th style="width:5%;">#</th>
                                             <th>Nombre</th>
                                             <th>Ciudad</th>
                                             <th>Contacto</th>
-                                            <th style="width: 12%;">Estado</th>
-                                            <th style="width: 26%;">Acciones</th>
+                                            <th style="width:12%;">Estado</th>
+                                            <th style="width:26%;">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -155,11 +191,20 @@
                                                 </td>
                                                 <td>
                                                     <div class="d-flex flex-wrap gap-2">
-                                                        <button type="button" class="btn btn-warning btn-sm" @onclick="() => EditNoticiero(n.Id)">
-                                                            Editar
+                                                        <button type="button"
+                                                                class="btn btn-warning btn-sm d-inline-flex align-items-center"
+                                                                @onclick="() => EditNoticiero(n.Id)"
+                                                                disabled="@_isSaving">
+                                                            <i class="bi bi-pencil-square me-1"></i>
+                                                            <span>Editar</span>
                                                         </button>
-                                                        <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="() => ToggleActive(n.Id)">
-                                                            @(n.IsActive ? "Desactivar" : "Activar")
+
+                                                        <button type="button"
+                                                                class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center"
+                                                                @onclick="() => ToggleActive(n.Id)"
+                                                                disabled="@_isSaving">
+                                                            <i class="bi bi-toggle-on me-1"></i>
+                                                            <span>@(n.IsActive ? "Desactivar" : "Activar")</span>
                                                         </button>
                                                     </div>
                                                 </td>
@@ -177,8 +222,8 @@
 </section>
 
 @code {
-    private List<Noticiero> _noticieros = new List<Noticiero>();
-    private NoticieroFormModel _model = new NoticieroFormModel();
+    private List<Noticiero> _noticieros = new();
+    private NoticieroFormModel _model = new();
     private bool _isEditing;
     private bool _loading = true;
     private bool _isSaving;
@@ -186,6 +231,12 @@
 
     protected override async Task OnInitializedAsync()
     {
+        HeaderState.Set(
+            "bi bi-broadcast",
+            "Gestión de noticieros",
+            "Administre los noticieros a los que se envían los artículos"
+        );
+
         await LoadNoticieros();
         _loading = false;
     }
@@ -210,21 +261,15 @@
         _isSaving = true;
         _statusMessage = null;
 
-        if (string.IsNullOrWhiteSpace(_model.Name))
-        {
-            _isSaving = false;
-            return;
-        }
-
         if (_isEditing)
         {
             var entity = await Db.Noticieros.FindAsync(_model.Id);
             if (entity != null)
             {
-                entity.Name = _model.Name.Trim();
-                entity.City = _model.City.Trim();
-                entity.ContactEmail = _model.ContactEmail.Trim();
-                entity.ContactPhone = _model.ContactPhone.Trim();
+                entity.Name = _model.Name?.Trim() ?? "";
+                entity.City = _model.City?.Trim() ?? "";
+                entity.ContactEmail = _model.ContactEmail?.Trim() ?? "";
+                entity.ContactPhone = _model.ContactPhone?.Trim() ?? "";
                 entity.IsActive = _model.IsActive;
             }
         }
@@ -232,17 +277,19 @@
         {
             var entity = new Noticiero
             {
-                Name = _model.Name.Trim(),
-                City = _model.City.Trim(),
-                ContactEmail = _model.ContactEmail.Trim(),
-                ContactPhone = _model.ContactPhone.Trim(),
+                Name = _model.Name?.Trim() ?? "",
+                City = _model.City?.Trim() ?? "",
+                ContactEmail = _model.ContactEmail?.Trim() ?? "",
+                ContactPhone = _model.ContactPhone?.Trim() ?? "",
                 IsActive = _model.IsActive
             };
+
             Db.Noticieros.Add(entity);
         }
 
         await Db.SaveChangesAsync();
         await LoadNoticieros();
+
         _statusMessage = "Cambios guardados correctamente.";
         _isSaving = false;
         _isEditing = false;
@@ -251,6 +298,9 @@
 
     private async Task EditNoticiero(int id)
     {
+        if (_isSaving)
+            return;
+
         var entity = await Db.Noticieros.FindAsync(id);
         if (entity == null)
             return;
@@ -264,12 +314,16 @@
             ContactPhone = entity.ContactPhone,
             IsActive = entity.IsActive
         };
+
         _isEditing = true;
         _statusMessage = null;
     }
 
     private async Task ToggleActive(int id)
     {
+        if (_isSaving)
+            return;
+
         var entity = await Db.Noticieros.FindAsync(id);
         if (entity == null)
             return;

@@ -5,52 +5,47 @@
 @using DiarioMagna.Domain.Models
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
+@using DiarioMagna.Components.Shared
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
+@inject LayoutHeaderState HeaderState
 
-<section class="admin-hero">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-            <div class="d-flex align-items-center">
-                <div class="admin-hero-icon me-3">
-                    <span class="fs-2">📰</span>
-                </div>
-                <div>
-                    <h1 class="h4 mb-1 text-white">
-                        @HeaderTitle
-                    </h1>
-                    <div class="small text-white-50">
-                        @HeaderSubtitle
-                    </div>
-                </div>
+<PageHeader Icon="bi bi-newspaper"
+            Title="@HeaderTitle"
+            Description="@HeaderSubtitle">
+
+    <RightContent>
+        @if (IsAuthenticated)
+        {
+            <div class="d-flex flex-wrap gap-2">
+                @if (IsSecretaria || IsAdmin)
+                {
+                    <button class="btn btn-light btn-sm d-inline-flex align-items-center"
+                            @onclick="@(() => Navigation.NavigateTo("/articles/create"))">
+                        <i class="bi bi-file-earmark-plus me-1"></i>
+                        Crear artículo
+                    </button>
+                }
+                @if (IsRelaciones || IsAdmin)
+                {
+                    <button class="btn btn-outline-light btn-sm d-inline-flex align-items-center"
+                            @onclick="@(() => Navigation.NavigateTo("/admin/solicitudes"))">
+                        <i class="bi bi-check2-square me-1"></i>
+                        Panel de solicitudes
+                    </button>
+                }
+                @if (IsEncargado || IsAdmin)
+                {
+                    <button class="btn btn-outline-light btn-sm d-inline-flex align-items-center"
+                            @onclick="@(() => Navigation.NavigateTo("/admin/envios"))">
+                        <i class="bi bi-broadcast-pin me-1"></i>
+                        Panel de envíos
+                    </button>
+                }
             </div>
-
-            @if (IsAuthenticated)
-            {
-                <div class="d-flex flex-column flex-sm-row gap-2">
-                    @if (IsSecretaria || IsAdmin)
-                    {
-                        <button class="btn btn-light btn-sm" @onclick="@(() => Navigation.NavigateTo("/articles/create"))">
-                            Crear artículo
-                        </button>
-                    }
-                    @if (IsRelaciones || IsAdmin)
-                    {
-                        <button class="btn btn-outline-light btn-sm" @onclick="@(() => Navigation.NavigateTo("/admin/solicitudes"))">
-                            Panel de solicitudes
-                        </button>
-                    }
-                    @if (IsEncargado || IsAdmin)
-                    {
-                        <button class="btn btn-outline-light btn-sm" @onclick="@(() => Navigation.NavigateTo("/admin/envios"))">
-                            Panel de envíos
-                        </button>
-                    }
-                </div>
-            }
-        </div>
-    </div>
-</section>
+        }
+    </RightContent>
+</PageHeader>
 
 <section class="admin-list-section">
     <div class="container">
@@ -66,8 +61,10 @@
                 <div class="col-12 col-lg-7">
                     <div class="card shadow-sm border-0 admin-article-card">
                         <div class="card-body">
-                            <h5 class="mb-3">Bienvenido a Diario Magna</h5>
-                            
+                            <h5 class="mb-2">Bienvenido a Diario Magna</h5>
+                            <p class="small text-muted mb-3">
+                                Plataforma de gestión del flujo editorial para noticias y artículos institucionales.
+                            </p>
                             <ul class="mb-3 small">
                                 <li>Secretaría registra y envía las noticias.</li>
                                 <li>Relaciones Públicas revisa y aprueba el contenido.</li>
@@ -75,10 +72,12 @@
                                 <li>Administrador supervisa todo el proceso.</li>
                             </ul>
                             <div class="d-flex flex-wrap gap-2">
-                                <button class="btn btn-primary btn-sm" @onclick="@(() => Navigation.NavigateTo("/Account/Login"))">
+                                <button class="btn btn-primary btn-sm"
+                                        @onclick="@(() => Navigation.NavigateTo("/Account/Login"))">
                                     Iniciar sesión
                                 </button>
-                                <button class="btn btn-outline-primary btn-sm" @onclick="@(() => Navigation.NavigateTo("/Account/Register"))">
+                                <button class="btn btn-outline-primary btn-sm"
+                                        @onclick="@(() => Navigation.NavigateTo("/Account/Register"))">
                                     Registrarse
                                 </button>
                             </div>
@@ -88,7 +87,10 @@
                 <div class="col-12 col-lg-5">
                     <div class="card shadow-sm border-0 admin-article-card">
                         <div class="card-body">
-                            <h6 class="mb-3">Estado general</h6>
+                            <div class="d-flex justify-content-between align-items-baseline mb-2">
+                                <h6 class="mb-0">Estado general</h6>
+                                <span class="small text-muted">Resumen del sistema</span>
+                            </div>
                             <div class="row g-3">
                                 <div class="col-6">
                                     <div class="home-stat-card">
@@ -128,7 +130,13 @@
                     {
                         <div class="card shadow-sm border-0 admin-article-card mb-3">
                             <div class="card-body">
-                                <h5 class="mb-3">Flujo del artículo</h5>
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="me-2 text-warning"><i class="bi bi-pencil-square"></i></span>
+                                    <h5 class="mb-0">Flujo del artículo</h5>
+                                </div>
+                                <p class="small text-muted mb-2">
+                                    Desde aquí puedes registrar y enviar noticias al flujo editorial.
+                                </p>
                                 <ol class="small mb-0">
                                     <li>Secretaría crea y envía la noticia.</li>
                                     <li>Relaciones Públicas revisa y aprueba.</li>
@@ -141,14 +149,17 @@
                     {
                         <div class="card shadow-sm border-0 admin-article-card mb-3">
                             <div class="card-body">
-                                <h5 class="mb-3">Trabajo de revisión</h5>
-                                <p class="small mb-2">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="me-2 text-success"><i class="bi bi-check2-square"></i></span>
+                                    <h5 class="mb-0">Trabajo de revisión</h5>
+                                </div>
+                                <p class="small text-muted mb-2">
                                     Gestiona las noticias pendientes, mantén la calidad editorial
                                     y deja listas las publicaciones para su envío a los medios.
                                 </p>
                                 <ul class="small mb-0">
                                     <li>Revisa contenido y redacción.</li>
-                                    <li>Aprobar o rechazar artículos.</li>
+                                    <li>Aprueba o rechaza artículos.</li>
                                     <li>Deja comentarios internos al equipo si es necesario.</li>
                                 </ul>
                             </div>
@@ -158,8 +169,11 @@
                     {
                         <div class="card shadow-sm border-0 admin-article-card mb-3">
                             <div class="card-body">
-                                <h5 class="mb-3">Gestión de envíos</h5>
-                                <p class="small mb-2">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="me-2 text-primary"><i class="bi bi-broadcast-pin"></i></span>
+                                    <h5 class="mb-0">Gestión de envíos</h5>
+                                </div>
+                                <p class="small text-muted mb-2">
                                     Desde este módulo puedes decidir a qué noticieros se envía cada noticia aprobada.
                                 </p>
                                 <ul class="small mb-0">
@@ -174,8 +188,13 @@
                     {
                         <div class="card shadow-sm border-0 admin-article-card mb-3">
                             <div class="card-body">
-                                <h5 class="mb-3">Administrador del sistema</h5>
-                               
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="me-2 text-info"><i class="bi bi-shield-lock"></i></span>
+                                    <h5 class="mb-0">Administrador del sistema</h5>
+                                </div>
+                                <p class="small text-muted mb-2">
+                                    Vista general del flujo editorial y la configuración del sistema.
+                                </p>
                                 <ul class="small mb-0">
                                     <li>Supervisa el volumen de noticias por estado.</li>
                                     <li>Administra usuarios y roles desde el módulo de identidad.</li>
@@ -205,21 +224,31 @@
                             }
                             else
                             {
-                                <div class="list-group list-group-flush">
-                                    @foreach (var a in _lastArticles)
+                                <div class="d-flex flex-column">
+                                    @{
+                                        for (var i = 0; i < _lastArticles.Count; i++)
+                                        {
+                                            var a = _lastArticles[i];
+                                            var borderClass = i == 0 ? string.Empty : "border-top";
+                                        }
+                                    }
+                                    @for (var i = 0; i < _lastArticles.Count; i++)
                                     {
-                                        <div class="list-group-item px-0">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <div>
-                                                    <div class="fw-semibold">@a.Title</div>
-                                                    <div class="small text-muted">
-                                                        @a.AuthorName · @a.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
-                                                    </div>
+                                        var a = _lastArticles[i];
+                                        var borderClass = i == 0 ? "" : "border-top";
+
+                                        <div class="d-flex justify-content-between align-items-start py-2 @borderClass">
+                                            <div class="me-3">
+                                                <div class="fw-semibold">@a.Title</div>
+                                                <div class="small text-muted">
+                                                    <i class="bi bi-person me-1"></i>@a.AuthorName
+                                                    <span class="mx-1">·</span>
+                                                    <i class="bi bi-clock me-1"></i>@a.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
                                                 </div>
-                                                <span class="badge @GetStatusBadgeClass(a.Status)">
-                                                    @a.Status
-                                                </span>
                                             </div>
+                                            <span class="badge @GetStatusBadgeClass(a.Status)">
+                                                @a.Status
+                                            </span>
                                         </div>
                                     }
                                 </div>
@@ -231,7 +260,10 @@
                 <div class="col-12 col-xl-4">
                     <div class="card shadow-sm border-0 admin-article-card mb-3">
                         <div class="card-body">
-                            <h6 class="mb-3">Indicadores</h6>
+                            <div class="d-flex justify-content-between align-items-baseline mb-2">
+                                <h6 class="mb-0">Indicadores</h6>
+                                <span class="small text-muted">Resumen del sistema</span>
+                            </div>
                             <div class="row g-3">
                                 <div class="col-6">
                                     <div class="home-stat-card">
@@ -271,6 +303,7 @@
                                     {
                                         <button class="btn btn-primary btn-sm"
                                                 @onclick="@(() => Navigation.NavigateTo("/articles/create"))">
+                                            <i class="bi bi-file-earmark-plus me-1"></i>
                                             Crear nuevo artículo
                                         </button>
                                     }
@@ -278,6 +311,7 @@
                                     {
                                         <button class="btn btn-outline-primary btn-sm"
                                                 @onclick="@(() => Navigation.NavigateTo("/admin/solicitudes"))">
+                                            <i class="bi bi-journal-check me-1"></i>
                                             Revisar artículos pendientes
                                         </button>
                                     }
@@ -285,10 +319,12 @@
                                     {
                                         <button class="btn btn-outline-primary btn-sm"
                                                 @onclick="@(() => Navigation.NavigateTo("/admin/envios"))">
+                                            <i class="bi bi-send-check me-1"></i>
                                             Gestionar envíos a noticieros
                                         </button>
                                         <button class="btn btn-outline-secondary btn-sm"
-                                                @onclick="@(() => Navigation.NavigateTo("/admin/noticieros"))">
+                                                @onclick="@(() => Navigation.NavigateTo("/admin/noticeros"))">
+                                            <i class="bi bi-broadcast-pin me-1"></i>
                                             Administrar noticieros
                                         </button>
                                     }
@@ -325,6 +361,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        HeaderState.Set("bi bi-layout-text-window-reverse", "Diario Magna", "Sistema de flujo de noticias");
+
         var authState = await AuthStateTask;
         var user = authState.User;
 

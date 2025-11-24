@@ -5,24 +5,15 @@
 @using DiarioMagna.Data
 @using DiarioMagna.Domain.Models
 @using Microsoft.EntityFrameworkCore
+@using DiarioMagna.Components.Shared
+
+@inject LayoutHeaderState HeaderState
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
 
-<section class="admin-hero">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-            <div class="d-flex align-items-center">
-                <div class="admin-hero-icon me-3">
-                    <span class="fs-2">📑</span>
-                </div>
-                <div>
-                    <h1 class="h4 mb-1 text-white">Panel de Solicitudes</h1>
-                    
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+<PageHeader Icon="bi bi-journal-check"
+            Title="Panel de solicitudes"
+            Description="Revisa, aprueba o rechaza los artículos enviados por secretaría" />
 
 <section class="admin-list-section">
     <div class="container">
@@ -34,13 +25,13 @@
         }
         else if (!_items.Any())
         {
-            <div class="alert alert-info mt-3">
+            <div class="alert alert-info mt-3 admin-article-card">
                 No hay artículos para mostrar con los filtros seleccionados.
             </div>
         }
         else
         {
-            <div class="card shadow-sm border-0 mb-3">
+            <div class="card shadow-sm border-0 admin-article-card mb-3">
                 <div class="card-body">
                     <div class="row g-2 align-items-end">
                         <div class="col-12 col-md-4">
@@ -50,7 +41,6 @@
                                    placeholder="Buscar por título o autor..." />
                         </div>
                         <div class="col-12 col-md-3">
-
                             <label class="form-label small mb-1">Estado</label>
                             <select class="form-select form-select-sm" @bind="_statusFilter">
                                 <option value="0">Pendiente de revisión</option>
@@ -80,13 +70,13 @@
                                         {
                                             <img src="@item.AttachmentPath"
                                                  class="img-fluid rounded"
-                                                 style="max-height: 100px; object-fit: cover; min-width: 140px;"
+                                                 style="max-height: 110px; object-fit: cover; min-width: 150px;"
                                                  alt="Imagen del artículo" />
                                         }
                                         else
                                         {
                                             <div class="d-flex align-items-center justify-content-center bg-light rounded"
-                                                 style="height: 100px; min-width: 140px;">
+                                                 style="height: 110px; min-width: 150px;">
                                                 <span class="text-muted small">Sin imagen</span>
                                             </div>
                                         }
@@ -96,12 +86,11 @@
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <div>
                                                 <h5 class="mb-1">@item.Title</h5>
-                                                
+
                                                 <div class="small text-muted">
                                                     @item.AuthorName · @item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
                                                 </div>
-                                                
-                                               
+
                                                 <div class="small text-muted">
                                                     Categoría: @item.CategoryName
                                                     @if (!string.IsNullOrWhiteSpace(item.PlanName))
@@ -122,24 +111,43 @@
                                         </div>
 
                                         <div class="d-flex flex-wrap gap-2 justify-content-end">
-                                           
                                             <button class="btn btn-outline-secondary btn-sm"
                                                     @onclick="() => ViewArticle(item.Id)">
+                                                <i class="bi bi-eye me-1"></i>
                                                 Ver artículo
                                             </button>
                                             <button class="btn btn-outline-primary btn-sm"
                                                     @onclick="() => EditArticle(item.Id)">
+                                                <i class="bi bi-pencil-square me-1"></i>
                                                 Editar
                                             </button>
                                             <button class="btn btn-success btn-sm"
-                                                    
+                                                    disabled="@item.Saving"
                                                     @onclick="() => ChangeStatus(item, ArticleStatus.Aprobado)">
-                                                Aprobar
+                                                @if (item.Saving)
+                                                {
+                                                    <span class="spinner-border spinner-border-sm me-1"></span>
+                                                    <span>Guardando...</span>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-check-circle me-1"></i>
+                                                    <span>Aprobar</span>
+                                                }
                                             </button>
                                             <button class="btn btn-danger btn-sm"
-                                                   
+                                                    disabled="@item.Saving"
                                                     @onclick="() => ChangeStatus(item, ArticleStatus.Rechazado)">
-                                                Rechazar
+                                                @if (item.Saving)
+                                                {
+                                                    <span class="spinner-border spinner-border-sm me-1"></span>
+                                                    <span>Guardando...</span>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-x-circle me-1"></i>
+                                                    <span>Rechazar</span>
+                                                }
                                             </button>
                                         </div>
 
@@ -168,6 +176,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        HeaderState.Set("bi bi-journal-check", "Panel de solicitudes", "Revisa, aprueba o rechaza los artículos enviados por secretaría");
+
         var query = Db.Articles
             .Include(a => a.Category)
             .Include(a => a.Plan)
@@ -198,10 +208,10 @@
 
         if (!string.IsNullOrWhiteSpace(_search))
         {
-            var s = _search.Trim().ToLower();
+            var s = _search.Trim().ToLowerInvariant();
             query = query.Where(i =>
-                i.Title.ToLower().Contains(s) ||
-                i.AuthorName.ToLower().Contains(s));
+                i.Title.ToLowerInvariant().Contains(s) ||
+                i.AuthorName.ToLowerInvariant().Contains(s));
         }
 
         if (_statusFilter != "Todos" &&

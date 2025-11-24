@@ -1,0 +1,40 @@
+﻿@namespace DiarioMagna.Components.Shared
+
+<section class="page-header-hero">
+    <div class="container page-header-inner">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div class="page-header-icon">
+                @if (!string.IsNullOrWhiteSpace(Icon))
+                {
+                    <i class="@Icon"></i>
+                }
+                else
+                {
+                    <i class="bi bi-newspaper"></i>
+                }
+            </div>
+
+            <div class="page-header-text">
+                <h1>@Title</h1>
+                @if (!string.IsNullOrWhiteSpace(Description))
+                {
+                    <p class="page-header-subtitle">@Description</p>
+                }
+            </div>
+        </div>
+
+        @if (RightContent is not null)
+        {
+            <div class="page-header-actions">
+                @RightContent
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter] public string Icon { get; set; } = "";
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Description { get; set; } = "";
+    [Parameter] public RenderFragment? RightContent { get; set; }
+}

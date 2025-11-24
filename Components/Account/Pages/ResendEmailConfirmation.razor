@@ -12,24 +12,44 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Resend email confirmation</PageTitle>
+<PageTitle>Reenviar confirmación de correo</PageTitle>
 
-<h1>Resend email confirmation</h1>
-<h2>Enter your email.</h2>
-<hr />
-<StatusMessage Message="@message" />
-<div class="row">
-    <div class="col-md-4">
+<div class="auth-page">
+    <div class="auth-card fade-in">
+        <div class="auth-icon">📨</div>
+
+        <h1 class="auth-title">Reenviar confirmación</h1>
+        <p class="auth-subtitle">
+            Ingresa tu correo para enviarte nuevamente el enlace de confirmación.
+        </p>
+
+        <StatusMessage Message="@message" />
+
         <EditForm Model="Input" FormName="resend-email-confirmation" OnValidSubmit="OnValidSubmitAsync" method="post">
             <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" aria-required="true" placeholder="name@example.com" />
-                <label for="Input.Email" class="form-label">Email</label>
-                <ValidationMessage For="() => Input.Email" class="text-danger" />
+            <ValidationSummary class="text-danger small mb-2" role="alert" />
+
+            <div class="mb-3">
+                <label class="form-label auth-label" for="Input_Email">Correo electrónico</label>
+                <InputText @bind-Value="Input.Email"
+                           id="Input_Email"
+                           class="form-control auth-input"
+                           aria-required="true"
+                           placeholder="tucorreo@ejemplo.com" />
+                <ValidationMessage For="() => Input.Email" class="text-danger small" />
             </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Resend</button>
+
+            <button type="submit" class="btn btn-primary auth-submit w-100">
+                Reenviar correo
+            </button>
         </EditForm>
+    </div>
+
+    <div class="auth-links fade-in-delayed">
+        <span class="small">
+            ¿Ya confirmaste tu cuenta?
+            <a href="/Account/Login" class="link-light">Inicia sesión aquí</a>
+        </span>
     </div>
 </div>
 
@@ -44,19 +64,29 @@
         var user = await UserManager.FindByEmailAsync(Input.Email!);
         if (user is null)
         {
-            message = "Verification email sent. Please check your email.";
+            message = "Hemos enviado el correo de verificación. Revisa tu bandeja de entrada.";
             return;
         }
 
         var userId = await UserManager.GetUserIdAsync(user);
         var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
+        var baseUri = NavigationManager
+            .ToAbsoluteUri("/Account/ConfirmEmail")
+            .ToString();
+
         var callbackUrl = NavigationManager.GetUriWithQueryParameters(
-            NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
-            new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
+            baseUri,
+            new Dictionary<string, object?>
+            {
+                ["userId"] = userId,
+                ["code"] = code
+            });
+
         await EmailSender.SendConfirmationLinkAsync(user, Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
 
-        message = "Verification email sent. Please check your email.";
+        message = "Hemos enviado el correo de verificación. Revisa tu bandeja de entrada.";
     }
 
     private sealed class InputModel

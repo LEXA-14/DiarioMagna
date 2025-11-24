@@ -10,25 +10,16 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Hosting
+@using DiarioMagna.Components.Shared
+
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
 @inject IWebHostEnvironment Env
+@inject LayoutHeaderState HeaderState
 
-<section class="admin-hero">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-            <div class="d-flex align-items-center">
-                <div class="admin-hero-icon me-3">
-                    <span class="fs-2">📰</span>
-                </div>
-                <div>
-                    <h1 class="h4 mb-1 text-white">Revisión de Artículo</h1>
-                    <div class="small text-white-50">Relaciones Públicas · Aprobación de noticias</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+<PageHeader Icon="bi bi-journal-text"
+            Title="Revisión de artículo"
+            Description="Relaciones Públicas · Aprobación de noticias" />
 
 <section class="admin-list-section">
     <div class="container">
@@ -40,7 +31,9 @@
         }
         else if (_notFound)
         {
-            <div class="alert alert-danger">No se encontró el artículo.</div>
+            <div class="alert alert-danger admin-article-card">
+                No se encontró el artículo.
+            </div>
         }
         else
         {
@@ -48,49 +41,78 @@
                 <div class="col-12 col-lg-4">
                     <div class="card shadow-sm border-0 admin-article-card mb-3">
                         <div class="card-body">
-                            <h5 class="card-title mb-2">Información del Autor</h5>
-                            <div class="small mb-1">
-                                <span class="fw-semibold">Autor:</span> @_model.AuthorName
+                            <h5 class="card-title mb-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-person-badge"></i>
+                                <span>Información del autor</span>
+                            </h5>
+
+                            <div class="small mb-2">
+                                <span class="fw-semibold">Autor:</span><br />
+                                @_model.AuthorName
+                            </div>
+                            <div class="small mb-2">
+                                <span class="fw-semibold">Correo:</span><br />
+                                @_model.AuthorEmail
+                            </div>
+                            <div class="small mb-2">
+                                <span class="fw-semibold">Fecha:</span><br />
+                                @_model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                            </div>
+                            <div class="small mb-2">
+                                <span class="fw-semibold">Categoría:</span><br />
+                                @_model.CategoryName
                             </div>
                             <div class="small mb-1">
-                                <span class="fw-semibold">Correo:</span> @_model.AuthorEmail
-                            </div>
-                            <div class="small mb-1">
-                                <span class="fw-semibold">Fecha:</span> @_model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
-                            </div>
-                            <div class="small mb-1">
-                                <span class="fw-semibold">Categoría:</span> @_model.CategoryName
-                            </div>
-                            <div class="small mb-1">
-                                <span class="fw-semibold">Estado actual:</span>
-                                <span class="badge bg-info text-dark">@_model.Status</span>
+                                <span class="fw-semibold">Estado actual:</span><br />
+                                <span class="badge @GetStatusBadgeClass(_model.Status)">
+                                    @_model.Status
+                                </span>
                             </div>
                         </div>
                     </div>
 
                     <div class="card shadow-sm border-0 admin-article-card">
                         <div class="card-body">
-                            <h5 class="card-title mb-2">Imagen del artículo</h5>
+                            <h5 class="card-title mb-2 d-flex align-items-center gap-2">
+                                <i class="bi bi-image"></i>
+                                <span>Imagen del artículo</span>
+                            </h5>
+
                             @if (!string.IsNullOrWhiteSpace(_model.AttachmentPath))
                             {
-                                <img src="@_model.AttachmentPath" class="img-fluid rounded mb-2" alt="Imagen del artículo" />
+                                <div class="mb-2 text-center">
+                                    <img src="@_model.AttachmentPath"
+                                         class="img-fluid rounded shadow-sm"
+                                         style="max-height: 260px; object-fit: cover;"
+                                         alt="Imagen del artículo" />
+                                </div>
                                 <div class="small text-muted mb-2">Imagen actual.</div>
                             }
                             else
                             {
-                                <div class="small text-muted mb-2">Este artículo no tiene imagen adjunta.</div>
+                                <div class="small text-muted mb-3">
+                                    Este artículo no tiene imagen adjunta.
+                                </div>
                             }
 
                             <div class="mb-2">
                                 <label class="form-label auth-label">Reemplazar imagen (opcional)</label>
-                                <InputFile OnChange="OnFileChange" />
-                                @if (!string.IsNullOrWhiteSpace(_newFileName))
-                                {
-                                    <div class="small text-muted mt-1">
-                                        Nueva imagen seleccionada: @_newFileName
+                                <div class="upload-dropzone">
+                                    <InputFile class="upload-input" OnChange="OnFileChange" />
+                                    <div class="text-center small text-muted">
+                                        <i class="bi bi-cloud-arrow-up fs-5 d-block mb-1"></i>
+                                        <span>Haz clic aquí para seleccionar una nueva imagen (máx. 10 MB)</span>
+                                        @if (!string.IsNullOrWhiteSpace(_newFileName))
+                                        {
+                                            <div class="mt-2">
+                                                <span class="fw-semibold">Nueva imagen seleccionada:</span><br />
+                                                @_newFileName
+                                            </div>
+                                        }
                                     </div>
-                                }
+                                </div>
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -98,45 +120,64 @@
                 <div class="col-12 col-lg-8">
                     <div class="card shadow-sm border-0 admin-article-card">
                         <div class="card-body">
+
                             @if (!string.IsNullOrWhiteSpace(_statusMessage))
                             {
-                                <div class="alert alert-info py-2 px-3 small mb-3">
-                                    @_statusMessage
+                                <div class="alert alert-info py-2 px-3 small mb-3 d-flex align-items-center gap-2">
+                                    <i class="bi bi-info-circle-fill"></i>
+                                    <span>@_statusMessage</span>
                                 </div>
                             }
 
                             <EditForm Model="_model" OnValidSubmit="SaveArticle">
                                 <DataAnnotationsValidator />
-                                <ValidationSummary class="text-danger small" />
+                                <ValidationSummary class="text-danger small mb-2" />
 
                                 <div class="mb-3">
-                                    <label class="form-label auth-label">Título del Artículo</label>
-                                    <InputText class="form-control auth-input" @bind-Value="_model.Title" />
+                                    <label class="form-label auth-label">Título del artículo</label>
+                                    <InputText class="form-control auth-input"
+                                               @bind-Value="_model.Title" />
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label auth-label">Contenido del artículo</label>
-                                    <InputTextArea class="form-control" style="min-height: 220px;" @bind-Value="_model.Content" />
+                                    <InputTextArea class="form-control"
+                                                   style="min-height: 220px;"
+                                                   @bind-Value="_model.Content" />
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label auth-label">Estado</label>
-                                    <InputSelect class="form-select" @bind-Value="_model.Status">
+                                    <InputSelect class="form-select form-select-sm"
+                                                 @bind-Value="_model.Status">
                                         <option value="@ArticleStatus.Pendiente">Pendiente de revisión</option>
                                         <option value="@ArticleStatus.Aprobado">Aprobado</option>
                                         <option value="@ArticleStatus.Rechazado">Rechazado</option>
                                     </InputSelect>
                                 </div>
 
-                                <div class="d-flex justify-content-between gap-2 mt-4">
-                                    <button type="button" class="btn btn-outline-secondary" @onclick="BackToList">
-                                        Volver al panel
+                                <div class="d-flex justify-content-between align-items-center gap-2 mt-4">
+                                    <button type="button"
+                                            class="btn btn-outline-secondary d-inline-flex align-items-center"
+                                            @onclick="BackToList">
+                                        <i class="bi bi-arrow-left-circle me-1"></i>
+                                        <span>Volver al panel</span>
                                     </button>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary" disabled="@_saving">
-                                            Guardar cambios
-                                        </button>
-                                    </div>
+
+                                    <button type="submit"
+                                            class="btn btn-primary auth-submit d-inline-flex align-items-center"
+                                            disabled="@_saving">
+                                        @if (_saving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                            <span>Guardando...</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-save me-1"></i>
+                                            <span>Guardar cambios</span>
+                                        }
+                                    </button>
                                 </div>
                             </EditForm>
                         </div>
@@ -160,6 +201,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        HeaderState.Set("bi bi-journal-text", "Revisión de artículo", "Relaciones Públicas · Aprobación de noticias");
+
         var entity = await Db.Articles
             .Include(a => a.Category)
             .FirstOrDefaultAsync(a => a.Id == Id);
@@ -234,6 +277,17 @@
     {
         _newFile = e.File;
         _newFileName = e.File.Name;
+    }
+
+    private string GetStatusBadgeClass(ArticleStatus status)
+    {
+        return status switch
+        {
+            ArticleStatus.Aprobado => "bg-success",
+            ArticleStatus.Rechazado => "bg-danger",
+            ArticleStatus.Pendiente => "bg-warning text-dark",
+            _ => "bg-secondary"
+        };
     }
 
     private sealed class EditArticleModel

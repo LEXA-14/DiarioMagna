@@ -2,7 +2,6 @@
 
 @using System.ComponentModel.DataAnnotations
 @using System.Text
-@using System.Text.Encodings.Web
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using DiarioMagna.Data
@@ -18,41 +17,64 @@
 <PageTitle>Registro</PageTitle>
 
 <div class="auth-page">
-    <div class="auth-card">
+
+    <div class="auth-card fade-in">
         <div class="auth-icon">📰</div>
+
         <h1 class="auth-title">Crear cuenta</h1>
         <p class="auth-subtitle">Regístrate para usar el sistema</p>
 
         <StatusMessage Message="@Message" />
 
-        <EditForm Model="Input" asp-route-returnUrl="@ReturnUrl" method="post" OnValidSubmit="RegisterUser" FormName="register">
+        <EditForm Model="Input" OnValidSubmit="RegisterUser" FormName="register">
             <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
+            <ValidationSummary class="text-danger small mb-2" />
 
             <div class="mb-3">
-                <label for="Input_Email" class="form-label auth-label">Correo electrónico</label>
-                <InputText @bind-Value="Input.Email" id="Input_Email" class="form-control auth-input" autocomplete="username" aria-required="true" placeholder="tucorreo@ejemplo.com" />
+                <label class="form-label auth-label">Correo electrónico</label>
+                <InputText class="form-control auth-input"
+                           @bind-Value="Input.Email"
+                           placeholder="tucorreo@ejemplo.com" />
                 <ValidationMessage For="() => Input.Email" class="text-danger small" />
             </div>
 
             <div class="mb-3">
-                <label for="Input_Password" class="form-label auth-label">Contraseña</label>
-                <InputText type="password" @bind-Value="Input.Password" id="Input_Password" class="form-control auth-input" autocomplete="new-password" aria-required="true" placeholder="********" />
+                <label class="form-label auth-label">Nombre de usuario</label>
+                <InputText class="form-control auth-input"
+                           @bind-Value="Input.UserName"
+                           placeholder="Ejemplo: Ángel Paredes" />
+                <ValidationMessage For="() => Input.UserName" class="text-danger small" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label auth-label">Contraseña</label>
+                <InputText type="password"
+                           class="form-control auth-input"
+                           @bind-Value="Input.Password"
+                           placeholder="********" />
                 <ValidationMessage For="() => Input.Password" class="text-danger small" />
             </div>
 
             <div class="mb-3">
-                <label for="Input_ConfirmPassword" class="form-label auth-label">Confirmar contraseña</label>
-                <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input_ConfirmPassword" class="form-control auth-input" autocomplete="new-password" aria-required="true" placeholder="********" />
+                <label class="form-label auth-label">Confirmar contraseña</label>
+                <InputText type="password"
+                           class="form-control auth-input"
+                           @bind-Value="Input.ConfirmPassword"
+                           placeholder="********" />
                 <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger small" />
             </div>
 
-            <button type="submit" class="btn btn-primary auth-submit">Registrarse</button>
+            <button type="submit" class="btn btn-primary auth-submit w-100">
+                Registrarse
+            </button>
         </EditForm>
     </div>
 
-    <div class="auth-links">
-        <span class="small">¿Ya tienes cuenta? <a href="Account/Login">Inicia sesión aquí</a></span>
+    <div class="auth-links fade-in-delayed">
+        <span class="small">
+            ¿Ya tienes cuenta?
+            <a href="/Account/Login" class="link-light">Inicia sesión aquí</a>
+        </span>
     </div>
 </div>
 
@@ -65,15 +87,45 @@
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
-    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+    private string? Message => identityErrors is null
+        ? null
+        : $"Error: {string.Join(", ", identityErrors.Select(e => e.Description))}";
 
     public async Task RegisterUser(EditContext editContext)
     {
+        identityErrors = null;
+
+        var existingByEmail = await UserManager.FindByEmailAsync(Input.Email);
+        if (existingByEmail is not null)
+        {
+            identityErrors = new[]
+            {
+                new IdentityError { Description = "Ya existe un usuario registrado con ese correo electrónico." }
+            };
+            return;
+        }
+
+        var existingByUserName = await UserManager.FindByNameAsync(Input.UserName);
+        if (existingByUserName is not null)
+        {
+            identityErrors = new[]
+            {
+                new IdentityError { Description = "Ya existe un usuario con ese nombre de usuario." }
+            };
+            return;
+        }
+
         var user = CreateUser();
 
-        await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+        var userNameToStore = string.IsNullOrWhiteSpace(Input.UserName)
+            ? Input.Email
+            : Input.UserName.Trim();
+
+        await UserStore.SetUserNameAsync(user, userNameToStore, CancellationToken.None);
+
         var emailStore = GetEmailStore();
         await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+
         var result = await UserManager.CreateAsync(user, Input.Password);
 
         if (!result.Succeeded)
@@ -87,50 +139,66 @@
         var userId = await UserManager.GetUserIdAsync(user);
         var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-        var callbackUrl = NavigationManager.GetUriWithQueryParameters(
-            NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
-            new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code, ["returnUrl"] = ReturnUrl });
 
-        await EmailSender.SendConfirmationLinkAsync(user, Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
+        var baseUri = NavigationManager
+            .ToAbsoluteUri("/Account/ConfirmEmail")
+            .ToString();
+
+        var callbackUrl = NavigationManager.GetUriWithQueryParameters(
+            baseUri,
+            new Dictionary<string, object?>
+            {
+                ["userId"] = userId,
+                ["code"] = code,
+                ["returnUrl"] = ReturnUrl
+            });
+
+        await EmailSender.SendConfirmationLinkAsync(user, Input.Email, callbackUrl);
 
         if (UserManager.Options.SignIn.RequireConfirmedAccount)
         {
             RedirectManager.RedirectTo(
                 "Account/RegisterConfirmation",
-                new() { ["email"] = Input.Email, ["returnUrl"] = ReturnUrl });
+                new Dictionary<string, object?>
+                {
+                    ["email"] = Input.Email,
+                    ["returnUrl"] = ReturnUrl
+                });
         }
-
-        await SignInManager.SignInAsync(user, isPersistent: false);
-        RedirectManager.RedirectTo(ReturnUrl);
+        else
+        {
+            await SignInManager.SignInAsync(user, isPersistent: false);
+            RedirectManager.RedirectTo(ReturnUrl);
+        }
     }
 
-    private ApplicationUser CreateUser()
-    {
-        return Activator.CreateInstance<ApplicationUser>()!;
-    }
+    private ApplicationUser CreateUser() =>
+        Activator.CreateInstance<ApplicationUser>()!;
 
     private IUserEmailStore<ApplicationUser> GetEmailStore()
     {
         if (!UserManager.SupportsUserEmail)
-        {
-            throw new NotSupportedException("The default UI requires a user store with email support.");
-        }
+            throw new NotSupportedException("Email is required.");
+
         return (IUserEmailStore<ApplicationUser>)UserStore;
     }
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
+        [Required, EmailAddress]
         public string Email { get; set; } = "";
 
         [Required]
-        [StringLength(100, ErrorMessage = "La contraseña debe tener al menos {2} y máximo {1} caracteres.", MinimumLength = 6)]
+        [StringLength(100)]
+        public string UserName { get; set; } = "";
+
+        [Required]
+        [StringLength(100, MinimumLength = 6)]
         [DataType(DataType.Password)]
         public string Password { get; set; } = "";
 
         [DataType(DataType.Password)]
-        [Compare("Password", ErrorMessage = "La contraseña y la confirmación no coinciden.")]
+        [Compare("Password")]
         public string ConfirmPassword { get; set; } = "";
     }
 }
