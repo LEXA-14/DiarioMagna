@@ -16,6 +16,7 @@
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IWebHostEnvironment Env
+@inject LayoutHeaderState HeaderState
 
 <PageHeader Icon="bi bi-file-earmark-plus"
             Title="Crear nuevo artículo"
@@ -25,7 +26,7 @@
 <section class="admin-list-section">
     <div class="container">
         <div class="row g-4">
-            <!-- Columna izquierda: resumen / estado -->
+
             <div class="col-12 col-lg-4">
                 <div class="card shadow-sm border-0 admin-article-card mb-3">
                     <div class="card-body">
@@ -36,20 +37,12 @@
 
                         <div class="small mb-2">
                             <span class="fw-semibold">Título actual:</span><br />
-                            <span>
-                                @(string.IsNullOrWhiteSpace(_model.Title)
-                                                                ? "Sin título"
-                                                                : _model.Title)
-                            </span>
+                            <span>@(string.IsNullOrWhiteSpace(_model.Title) ? "Sin título" : _model.Title)</span>
                         </div>
 
                         <div class="small mb-2">
                             <span class="fw-semibold">Contenido:</span><br />
-                            <span>
-                                @(_model.Content?.Length > 0
-                                                                ? $"{_model.Content.Length} caracteres"
-                                                                : "Sin contenido")
-                            </span>
+                            <span>@(_model.Content?.Length > 0 ? $"{_model.Content.Length} caracteres" : "Sin contenido")</span>
                         </div>
 
                         <div class="small mb-2">
@@ -59,9 +52,7 @@
 
                         <div class="small text-muted mt-3 d-flex align-items-start gap-2">
                             <i class="bi bi-person-badge"></i>
-                            <span>
-                                El autor se tomará del usuario autenticado y se asociará al flujo de revisión.
-                            </span>
+                            <span>El autor se tomará del usuario autenticado y se asociará al flujo de revisión.</span>
                         </div>
                     </div>
                 </div>
@@ -74,17 +65,17 @@
                         </h6>
                         <ul class="small mb-0">
                             <li>Usa un título claro y directo.</li>
-                            <li>En el contenido, explica la noticia desde lo más importante a lo menos importante.</li>
-                            <li>Si amplías o corriges otra noticia, selecciona la referencia para enlazarlas.</li>
+                            <li>Explica la noticia desde lo más importante a lo menos importante.</li>
+                            <li>Si amplías o corriges otra noticia, selecciona la referencia.</li>
                         </ul>
                     </div>
                 </div>
             </div>
 
-            <!-- Columna derecha: formulario principal -->
             <div class="col-12 col-lg-8">
                 <div class="card shadow-sm border-0 admin-article-card">
                     <div class="card-body">
+
                         @if (!string.IsNullOrWhiteSpace(_successMessage))
                         {
                             <div class="alert alert-success py-2 px-3 small mb-3 d-flex align-items-center gap-2">
@@ -95,24 +86,19 @@
 
                         <EditForm Model="_model" OnValidSubmit="SaveArticle">
                             <DataAnnotationsValidator />
-                            <ValidationSummary class="text-danger small" />
+                            <ValidationSummary class="text-danger small mb-2" />
 
                             <div class="mb-3">
-                                <label class="form-label auth-label">
-                                    Título del artículo
-                                    <span class="text-danger">*</span>
-                                </label>
+                                <label class="form-label auth-label">Título del artículo<span class="text-danger">*</span></label>
                                 <InputText class="form-control auth-input"
                                            @bind-Value="_model.Title"
                                            placeholder="Ejemplo: Municipio X inaugura nuevo parque tecnológico" />
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label auth-label">
-                                    Categoría
-                                    <span class="text-danger">*</span>
-                                </label>
-                                <InputSelect class="form-select" @bind-Value="_model.CategoryId">
+                                <label class="form-label auth-label">Categoría<span class="text-danger">*</span></label>
+                                <InputSelect class="form-select form-select-sm"
+                                             @bind-Value="_model.CategoryId">
                                     @foreach (var cat in _categories)
                                     {
                                         <option value="@cat.Id">@cat.Name</option>
@@ -121,10 +107,9 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label auth-label">
-                                    Referencia a otra noticia (opcional)
-                                </label>
-                                <InputSelect class="form-select" @bind-Value="_model.ReferencedArticleId">
+                                <label class="form-label auth-label">Referencia a otra noticia (opcional)</label>
+                                <InputSelect class="form-select form-select-sm"
+                                             @bind-Value="_model.ReferencedArticleId">
                                     <option value="">Noticia sin referencia</option>
                                     @foreach (var refArt in _availableReferences)
                                     {
@@ -137,32 +122,24 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label auth-label">
-                                    Contenido del artículo
-                                    <span class="text-danger">*</span>
-                                </label>
+                                <label class="form-label auth-label">Contenido del artículo<span class="text-danger">*</span></label>
                                 <InputTextArea class="form-control"
-                                               style="min-height: 200px;"
+                                               style="min-height: 220px;"
                                                @bind-Value="_model.Content"
-                                               placeholder="Escribe aquí el cuerpo completo de la noticia..." />
+                                               placeholder="Escribe aquí la noticia completa..." />
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label auth-label">
-                                    Archivo adjunto (imagen, PDF, documento, video) – opcional
-                                </label>
+                                <label class="form-label auth-label">Archivo adjunto (opcional)</label>
                                 <div class="upload-dropzone">
                                     <InputFile class="upload-input" OnChange="OnFileChange" />
                                     <div class="text-center small text-muted">
                                         <i class="bi bi-cloud-arrow-up fs-5 d-block mb-1"></i>
-                                        <span>
-                                            Haz clic aquí para seleccionar un archivo (máx. 10 MB)
-                                        </span>
+                                        <span>Haz clic aquí para seleccionar un archivo (máx. 10 MB)</span>
                                         @if (!string.IsNullOrWhiteSpace(_uploadedFileName))
                                         {
                                             <div class="mt-2">
-                                                <span class="fw-semibold">Archivo seleccionado:</span>
-                                                <br />
+                                                <span class="fw-semibold">Archivo seleccionado:</span><br />
                                                 @_uploadedFileName
                                             </div>
                                         }
@@ -173,21 +150,17 @@
                             <div class="d-flex justify-content-between align-items-center mt-4">
                                 <button type="button"
                                         class="btn btn-outline-danger d-inline-flex align-items-center"
-                                        style="width: auto;"
                                         @onclick="Cancel">
                                     <i class="bi bi-x-circle me-1"></i>
-                                    Cancelar
+                                    <span>Cancelar</span>
                                 </button>
 
                                 <button type="submit"
                                         class="btn btn-primary auth-submit d-inline-flex align-items-center"
-                                        style="width: auto;"
                                         disabled="@_saving">
                                     @if (_saving)
                                     {
-                                        <span class="spinner-border spinner-border-sm me-2"
-                                              role="status"
-                                              aria-hidden="true"></span>
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
                                         <span>Enviando...</span>
                                     }
                                     else
@@ -197,18 +170,20 @@
                                     }
                                 </button>
                             </div>
+
                         </EditForm>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 </section>
 
 @code {
     private ArticleCreateModel _model = new ArticleCreateModel();
-    private List<ArticleReferenceItem> _availableReferences = new List<ArticleReferenceItem>();
-    private List<Category> _categories = new List<Category>();
+    private List<ArticleReferenceItem> _availableReferences = new();
+    private List<Category> _categories = new();
     private bool _saving;
     private string? _uploadedFileName;
     private IBrowserFile? _uploadedFile;
@@ -218,6 +193,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        HeaderState.Set("bi bi-file-earmark-plus", "Crear artículo", "Redacta una nueva noticia para el sistema");
+
         await EnsureDefaultPlan();
         await EnsureDefaultCategories();
         await LoadCategories();
@@ -228,9 +205,7 @@
     {
         var defaultPlan = await Db.Plans.OrderBy(p => p.Id).FirstOrDefaultAsync();
         if (defaultPlan != null)
-        {
             _defaultPlanId = defaultPlan.Id;
-        }
     }
 
     private async Task LoadReferences()
@@ -238,21 +213,15 @@
         _availableReferences = await Db.Articles
             .OrderByDescending(a => a.CreatedAt)
             .Take(20)
-            .Select(a => new ArticleReferenceItem
-            {
-                Id = a.Id,
-                Title = a.Title
-            })
+            .Select(a => new ArticleReferenceItem { Id = a.Id, Title = a.Title })
             .ToListAsync();
     }
 
     private async Task EnsureDefaultCategories()
     {
-        var existingCategories = await Db.Categories
-            .Select(c => c.Name)
-            .ToListAsync();
+        var existingNames = await Db.Categories.Select(c => c.Name).ToListAsync();
 
-        var defaultCategories = new List<string>
+        var defaults = new List<string>
         {
             "Economía",
             "Política",
@@ -262,16 +231,10 @@
             "Deportes"
         };
 
-        foreach (var categoryName in defaultCategories)
+        foreach (var name in defaults)
         {
-            if (!existingCategories.Contains(categoryName))
-            {
-                Db.Categories.Add(new Category
-                {
-                    Name = categoryName,
-                    IsActive = true
-                });
-            }
+            if (!existingNames.Contains(name))
+                Db.Categories.Add(new Category { Name = name, IsActive = true });
         }
 
         await Db.SaveChangesAsync();
@@ -285,9 +248,7 @@
             .ToListAsync();
 
         if (_categories.Any())
-        {
             _model.CategoryId = _categories.First().Id;
-        }
     }
 
     private async Task SaveArticle()
@@ -298,20 +259,22 @@
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
-        var authorName = user.Identity?.Name ?? "Usuario";
-        var authorEmail = user.Claims.FirstOrDefault(c => c.Type == "email")?.Value
-                          ?? user.Identity?.Name
-                          ?? "";
+        var name = user.Identity?.Name ?? "";
+        var email = user.Claims.FirstOrDefault(c => c.Type == "email")?.Value ?? name;
 
         string? attachmentPath = null;
+
         if (_uploadedFile != null)
         {
             var uploadsFolder = Path.Combine(Env.WebRootPath, "uploads");
             Directory.CreateDirectory(uploadsFolder);
+
             var fileName = $"{Guid.NewGuid()}{Path.GetExtension(_uploadedFile.Name)}";
             var filePath = Path.Combine(uploadsFolder, fileName);
+
             using var stream = File.Create(filePath);
             await _uploadedFile.OpenReadStream(10 * 1024 * 1024).CopyToAsync(stream);
+
             attachmentPath = $"/uploads/{fileName}";
         }
 
@@ -319,8 +282,8 @@
         {
             Title = _model.Title.Trim(),
             Content = _model.Content.Trim(),
-            AuthorName = authorName,
-            AuthorEmail = authorEmail,
+            AuthorName = name,
+            AuthorEmail = email,
             CreatedAt = DateTime.UtcNow,
             Status = ArticleStatus.Pendiente,
             CategoryId = _model.CategoryId,
@@ -333,18 +296,18 @@
 
         if (_model.ReferencedArticleId.HasValue)
         {
-            var reference = new ArticleReference
+            Db.ArticleReferences.Add(new ArticleReference
             {
                 ArticleId = article.Id,
                 ReferencedArticleId = _model.ReferencedArticleId.Value
-            };
-            Db.ArticleReferences.Add(reference);
+            });
             await Db.SaveChangesAsync();
         }
 
         _model = new ArticleCreateModel();
         _uploadedFile = null;
         _uploadedFileName = null;
+
         await LoadReferences();
 
         _successMessage = "Artículo enviado correctamente para revisión.";
@@ -367,12 +330,8 @@
         if (!_model.ReferencedArticleId.HasValue)
             return "Sin referencia.";
 
-        var item = _availableReferences
-            .FirstOrDefault(r => r.Id == _model.ReferencedArticleId.Value);
-
-        return item == null
-            ? "Referencia seleccionada."
-            : item.Title;
+        var item = _availableReferences.FirstOrDefault(r => r.Id == _model.ReferencedArticleId.Value);
+        return item?.Title ?? "Referencia seleccionada.";
     }
 
     private sealed class ArticleCreateModel
@@ -382,10 +341,10 @@
         public string Title { get; set; } = "";
 
         [Required]
-        [MinLength(20, ErrorMessage = "El contenido debe tener al menos 20 caracteres.")]
+        [MinLength(20)]
         public string Content { get; set; } = "";
 
-        [Required(ErrorMessage = "Debe seleccionar una categoría")]
+        [Required]
         public int CategoryId { get; set; }
 
         public int? ReferencedArticleId { get; set; }

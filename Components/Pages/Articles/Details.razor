@@ -1,76 +1,88 @@
 ﻿@page "/articles/details/{id:int}"
 @rendermode InteractiveServer
-@* @attribute [Authorize(Roles = "Secretaria,RelacionesPublicas,EncargadoSistema,Administrador")] *@
 
 @using DiarioMagna.Data
 @using DiarioMagna.Domain.Models
 @using Microsoft.EntityFrameworkCore
-@using System.Linq
 @using DiarioMagna.Components.Shared
+
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
+@inject LayoutHeaderState HeaderState
 
-<PageHeader
-    Icon="bi bi-file-earmark-text"
-    Title="Detalle del artículo"
-    Description="Visualización completa de la noticia">
+<PageHeader Icon="bi bi-file-earmark-text"
+            Title="Detalle del artículo"
+            Description="Visualización completa de la noticia">
     <RightContent>
         <button class="btn btn-outline-light btn-sm" @onclick="GoBack">
-            Volver al panel
+            <i class="bi bi-arrow-left-circle me-1"></i>Volver
         </button>
     </RightContent>
 </PageHeader>
 
 <section class="admin-list-section">
     <div class="container">
+
         @if (_loading)
         {
             <div class="text-center py-5">
-                <div class="spinner-border" role="status"></div>
+                <div class="spinner-border"></div>
             </div>
         }
         else if (_notFound)
         {
-            <div class="alert alert-danger">
+            <div class="alert alert-danger admin-article-card">
                 No se encontró el artículo solicitado.
             </div>
         }
         else
         {
             <div class="row g-4">
+
                 <div class="col-12 col-lg-4">
                     <div class="card shadow-sm border-0 admin-article-card mb-3">
                         <div class="card-body">
-                            <h5 class="card-title mb-2">Información general</h5>
-                            <div class="small mb-1">
-                                <span class="fw-semibold">Autor:</span> @_model.AuthorName
+
+                            <h5 class="card-title mb-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-info-circle"></i>
+                                <span>Información general</span>
+                            </h5>
+
+                            <div class="small mb-2">
+                                <span class="fw-semibold">Autor:</span><br /> @_model.AuthorName
                             </div>
-                            <div class="small mb-1">
-                                <span class="fw-semibold">Correo:</span> @_model.AuthorEmail
+
+                            <div class="small mb-2">
+                                <span class="fw-semibold">Correo:</span><br /> @_model.AuthorEmail
                             </div>
-                            <div class="small mb-1">
-                                <span class="fw-semibold">Fecha de creación:</span>
+
+                            <div class="small mb-2">
+                                <span class="fw-semibold">Fecha de creación:</span><br />
                                 @_model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
                             </div>
-                            <div class="small mb-1">
-                                <span class="fw-semibold">Categoría:</span> @_model.CategoryName
+
+                            <div class="small mb-2">
+                                <span class="fw-semibold">Categoría:</span><br /> @_model.CategoryName
                             </div>
+
                             @if (!string.IsNullOrWhiteSpace(_model.PlanName))
                             {
-                                <div class="small mb-1">
-                                    <span class="fw-semibold">Plan:</span> @_model.PlanName
+                                <div class="small mb-2">
+                                    <span class="fw-semibold">Plan:</span><br /> @_model.PlanName
                                 </div>
                             }
-                            <div class="small mb-1">
-                                <span class="fw-semibold">Estado:</span>
+
+                            <div class="small mb-2">
+                                <span class="fw-semibold">Estado:</span><br />
                                 <span class="badge @GetStatusBadgeClass(_model.Status)">
                                     @_model.Status
                                 </span>
                             </div>
+
                             @if (!string.IsNullOrWhiteSpace(_model.ReferenceTitle))
                             {
-                                <div class="small mt-2">
-                                    <span class="fw-semibold">Referencia:</span>
+                                <div class="small mb-2">
+                                    <span class="fw-semibold">Referencia:</span><br />
                                     @if (_model.ReferenceArticleId.HasValue)
                                     {
                                         <a href="@GetDetailsUrl(_model.ReferenceArticleId.Value)">
@@ -79,13 +91,14 @@
                                     }
                                     else
                                     {
-                                        <span>@_model.ReferenceTitle</span>
+                                        @_model.ReferenceTitle
                                     }
                                 </div>
                             }
 
                             <div class="mt-3">
                                 <div class="small fw-semibold mb-1">Enviado a noticieros</div>
+
                                 @if (_model.Noticieros.Any())
                                 {
                                     <ul class="small mb-0">
@@ -102,6 +115,7 @@
                                     </div>
                                 }
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -109,26 +123,27 @@
                 <div class="col-12 col-lg-8">
                     <div class="card shadow-sm border-0 admin-article-card">
                         <div class="card-body">
+
                             <h2 class="h4 mb-3">@_model.Title</h2>
 
                             @if (!string.IsNullOrWhiteSpace(_model.AttachmentPath))
                             {
                                 <div class="mb-3 text-center">
                                     <img src="@_model.AttachmentPath"
-                                         class="img-fluid rounded"
-                                         style="max-height: 320px; object-fit: cover;"
+                                         class="img-fluid rounded shadow-sm"
+                                         style="max-height: 340px; object-fit: cover;"
                                          alt="Imagen del artículo" />
                                 </div>
                             }
 
                             <div class="article-content-text">
-                                @(_model.Content?.Replace("\n", "<br />") is string html
-                                    ? (MarkupString)html
-                                    : (MarkupString)string.Empty)
+                                @((MarkupString)_model.Content.Replace("\n", "<br />"))
                             </div>
+
                         </div>
                     </div>
                 </div>
+
             </div>
         }
     </div>
@@ -137,17 +152,18 @@
 @code {
     [Parameter] public int Id { get; set; }
 
-    private ArticleDetailsModel _model = new ArticleDetailsModel();
+    private ArticleDetailsModel _model = new();
     private bool _loading = true;
     private bool _notFound;
 
     protected override async Task OnInitializedAsync()
     {
+        HeaderState.Set("bi bi-file-earmark-text", "Detalle del artículo", "Información completa de la noticia");
+
         var article = await Db.Articles
             .Include(a => a.Category)
             .Include(a => a.Plan)
-            .Include(a => a.ArticleNoticieros)
-                .ThenInclude(an => an.Noticiero)
+            .Include(a => a.ArticleNoticieros).ThenInclude(an => an.Noticiero)
             .FirstOrDefaultAsync(a => a.Id == Id);
 
         if (article == null)
@@ -202,9 +218,9 @@
         };
     }
 
-    private string GetDetailsUrl(int articleId)
+    private string GetDetailsUrl(int id)
     {
-        return $"/articles/details/{articleId}";
+        return $"/articles/details/{id}";
     }
 
     private sealed class ArticleDetailsModel

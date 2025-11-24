@@ -10,6 +10,7 @@
 
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
+@inject LayoutHeaderState HeaderState
 
 <PageHeader Icon="bi bi-journal-text"
             Title="Mis artículos"
@@ -17,41 +18,44 @@
 
 <section class="admin-list-section">
     <div class="container">
+
         @if (_loading)
         {
             <div class="text-center py-5">
-                <div class="spinner-border" role="status"></div>
+                <div class="spinner-border"></div>
             </div>
         }
         else if (!_items.Any())
         {
-            <div class="alert alert-info mt-3">
+            <div class="alert alert-info mt-3 admin-article-card">
                 Aún no has registrado artículos.
             </div>
         }
         else
         {
-            <div class="card shadow-sm border-0 mb-3">
+            <div class="card shadow-sm border-0 admin-article-card mb-3">
                 <div class="card-body">
-                    <div class="row g-2 align-items-end">
+                    <div class="row g-3 align-items-end">
                         <div class="col-12 col-md-6">
-                            <label class="form-label small mb-1">Buscar</label>
+                            <label class="form-label small mb-1">Buscar por título</label>
                             <input class="form-control form-control-sm"
-                                   @bind="_search"
-                                   placeholder="Buscar por título..." />
+                                   placeholder="Ejemplo: Inauguración, evento, anuncio..."
+                                   @bind="_search" />
                         </div>
+
                         <div class="col-12 col-md-3">
                             <label class="form-label small mb-1">Estado</label>
                             <select class="form-select form-select-sm" @bind="_statusFilter">
                                 <option value="Todos">Todos</option>
-                                <option value="PendingReview">Pendiente de revisión</option>
-                                <option value="Approved">Aprobado</option>
-                                <option value="Rejected">Rechazado</option>
-                                <option value="Sent">Enviado</option>
+                                <option value="Pendiente">Pendiente de revisión</option>
+                                <option value="Aprobado">Aprobado</option>
+                                <option value="Rechazado">Rechazado</option>
+                                <option value="Enviado">Enviado</option>
                             </select>
                         </div>
+
                         <div class="col-12 col-md-3 text-md-end">
-                            <div class="small text-muted mt-3 mt-md-0">
+                            <div class="small text-muted">
                                 Artículos encontrados: @FilteredItems.Count()
                             </div>
                         </div>
@@ -71,13 +75,13 @@
                                         {
                                             <img src="@item.AttachmentPath"
                                                  class="img-fluid rounded"
-                                                 style="max-height: 100px; object-fit: cover; min-width: 140px;"
+                                                 style="max-height:120px;object-fit:cover;min-width:170px;"
                                                  alt="Imagen del artículo" />
                                         }
                                         else
                                         {
                                             <div class="d-flex align-items-center justify-content-center bg-light rounded"
-                                                 style="height: 100px; min-width: 140px;">
+                                                 style="height:120px;min-width:170px;">
                                                 <span class="text-muted small">Sin imagen</span>
                                             </div>
                                         }
@@ -98,7 +102,8 @@
                                                     }
                                                 </div>
                                             </div>
-                                            <div class="text-end">
+
+                                            <div>
                                                 <span class="badge @GetStatusBadgeClass(item.Status)">
                                                     @item.Status
                                                 </span>
@@ -109,24 +114,31 @@
                                             @ShortContent(item.Content)
                                         </div>
 
-                                        <div class="d-flex flex-wrap gap-2 justify-content-end">
+                                        <div class="d-flex flex-wrap justify-content-end gap-2 mt-2">
                                             <button class="btn btn-outline-secondary btn-sm"
                                                     @onclick="() => ViewArticle(item.Id)">
-                                                Ver artículo
+                                                <i class="bi bi-eye me-1"></i>
+                                                Ver
                                             </button>
+
                                             <button class="btn btn-outline-primary btn-sm"
                                                     @onclick="() => EditArticle(item.Id)">
+                                                <i class="bi bi-pencil-square me-1"></i>
                                                 Editar
                                             </button>
                                         </div>
+
                                     </div>
+
                                 </div>
+
                             </div>
                         </div>
                     </div>
                 }
             </div>
         }
+
     </div>
 </section>
 
@@ -144,6 +156,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        HeaderState.Set("bi bi-journal-text", "Mis artículos", "Listado de noticias registradas por el usuario actual");
+
         var authState = await AuthStateTask;
         var user = authState.User;
         var email = user.Identity?.Name ?? "";
@@ -176,8 +190,8 @@
 
         if (!string.IsNullOrWhiteSpace(_search))
         {
-            var s = _search.Trim().ToLower();
-            query = query.Where(i => i.Title.ToLower().Contains(s));
+            var s = _search.Trim().ToLowerInvariant();
+            query = query.Where(i => i.Title.ToLowerInvariant().Contains(s));
         }
 
         if (_statusFilter != "Todos" &&
