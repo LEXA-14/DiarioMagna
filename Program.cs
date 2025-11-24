@@ -43,16 +43,19 @@ builder.Services.AddAuthorization();
 // Database
 // Si hay DefaultConnection -> SQL Server (tu PC).
 // Si no hay -> SQLite (Render u otros entornos sin SQL Server).
+// Database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    if (!string.IsNullOrWhiteSpace(connectionString))
+    if (builder.Environment.IsDevelopment() && !string.IsNullOrWhiteSpace(connectionString))
     {
+        // En tu PC (Development) usas SQL Server
         options.UseSqlServer(connectionString);
     }
     else
     {
+        // En Render (Production dentro de Docker) usas SQLite
         options.UseSqlite("Data Source=app.db");
     }
 });
