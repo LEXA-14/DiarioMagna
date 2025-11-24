@@ -2,10 +2,9 @@
 @inject NavigationManager Navigation
 
 <div class="sidebar-layout">
-    <!-- CABECERA MARCA -->
     <div class="sidebar-header">
         <div class="sidebar-logo">
-            <i class="bi bi-journal-richtext"></i>
+            <i class="bi bi-newspaper"></i>
         </div>
         <div class="sidebar-title">
             <div class="text-white fw-semibold">Diario Magna</div>
@@ -13,7 +12,6 @@
         </div>
     </div>
 
-    <!-- MENÚ PRINCIPAL -->
     <div class="sidebar-menu">
         <nav class="nav flex-column">
 
@@ -30,7 +28,6 @@
 
             @if (IsAuthenticated)
             {
-                @* Gestión de roles solo admin *@
                 @if (IsAdmin)
                 {
                     <div class="sidebar-section-caption mt-3">
@@ -49,7 +46,6 @@
                     Noticias
                 </div>
 
-                @* Crear artículo: Secretaria o Admin *@
                 @if (IsSecretaria || IsAdmin)
                 {
                     <NavLink class="nav-link sidebar-link" href="/articles/create">
@@ -60,7 +56,6 @@
                     </NavLink>
                 }
 
-                @* Mis artículos: casi todos los roles *@
                 @if (IsRelaciones || IsSecretaria || IsEncargado || IsAdmin)
                 {
                     <NavLink class="nav-link sidebar-link" href="/mis-articulos">
@@ -71,7 +66,6 @@
                     </NavLink>
                 }
 
-                @* Panel de solicitudes: Relaciones + Admin *@
                 @if (IsRelaciones || IsAdmin)
                 {
                     <NavLink class="nav-link sidebar-link" href="/admin/solicitudes">
@@ -82,7 +76,6 @@
                     </NavLink>
                 }
 
-                @* Panel de envíos / Noticieros: Encargado + Admin *@
                 @if (IsEncargado || IsAdmin)
                 {
                     <NavLink class="nav-link sidebar-link" href="/admin/envios">
@@ -103,7 +96,6 @@
         </nav>
     </div>
 
-    <!-- PIE: USUARIO + CERRAR SESIÓN -->
     <div class="sidebar-footer">
         @if (IsAuthenticated)
         {
