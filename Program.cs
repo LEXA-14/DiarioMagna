@@ -1,3 +1,4 @@
+using DiarioMagna;
 using DiarioMagna.Authorization;
 using DiarioMagna.Components;
 using DiarioMagna.Components.Account;
@@ -13,6 +14,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services
     .AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddScoped<LayoutHeaderState>();
 
 // Authentication / Identity State
 builder.Services.AddCascadingAuthenticationState();
