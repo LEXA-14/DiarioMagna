@@ -1,32 +1,36 @@
 ﻿@namespace DiarioMagna.Components.Shared
 
-<div class="page-header-wrapper mb-4">
-    <div class="page-header-content d-flex justify-content-between align-items-start flex-wrap">
-        <div class="d-flex align-items-center mb-3 mb-md-0">
-            @if (!string.IsNullOrWhiteSpace(Icon))
-            {
-                <div class="page-header-icon d-flex align-items-center justify-content-center me-3">
+<section class="page-header-hero">
+    <div class="container page-header-inner">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div class="page-header-icon">
+                @if (!string.IsNullOrWhiteSpace(Icon))
+                {
                     <i class="@Icon"></i>
-                </div>
-            }
+                }
+                else
+                {
+                    <i class="bi bi-newspaper"></i>
+                }
+            </div>
 
             <div class="page-header-text">
-                <h1 class="page-header-title">@Title</h1>
-
+                <h1>@Title</h1>
                 @if (!string.IsNullOrWhiteSpace(Description))
                 {
-                    <p class="page-header-description">@Description</p>
+                    <p class="page-header-subtitle">@Description</p>
                 }
             </div>
         </div>
-        <div class="page-header-actions">
-            @if (RightContent is not null)
-            {
+
+        @if (RightContent is not null)
+        {
+            <div class="page-header-actions">
                 @RightContent
-            }
-        </div>
+            </div>
+        }
     </div>
-</div>
+</section>
 
 @code {
     [Parameter] public string Icon { get; set; } = "";
