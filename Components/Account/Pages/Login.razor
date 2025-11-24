@@ -6,6 +6,7 @@
 @using DiarioMagna.Data
 
 @inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
@@ -92,11 +93,29 @@
 
     public async Task LoginUser()
     {
+        errorMessage = null;
+
+        // 1. Buscar por email
+        var user = await UserManager.FindByEmailAsync(Input.Email);
+        if (user is null)
+        {
+            errorMessage = "Error: Intento de inicio de sesión inválido.";
+            return;
+        }
+
+        // 2. Verificar confirmación de correo (si está configurado así)
+        if (UserManager.Options.SignIn.RequireConfirmedAccount && !user.EmailConfirmed)
+        {
+            errorMessage = "Debes confirmar tu correo antes de iniciar sesión.";
+            return;
+        }
+
+        // 3. Iniciar sesión usando el objeto usuario
         var result = await SignInManager.PasswordSignInAsync(
-            Input.Email,
+            user,
             Input.Password,
             Input.RememberMe,
-            lockoutOnFailure: false);
+            lockoutOnFailure: true);
 
         if (result.Succeeded)
         {
