@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
@@ -40,11 +41,21 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // Database
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// Si hay DefaultConnection -> SQL Server (tu PC).
+// Si no hay -> SQLite (Render u otros entornos sin SQL Server).
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+{
+    if (!string.IsNullOrWhiteSpace(connectionString))
+    {
+        options.UseSqlServer(connectionString);
+    }
+    else
+    {
+        options.UseSqlite("Data Source=app.db");
+    }
+});
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -58,12 +69,18 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 .AddSignInManager()
 .AddDefaultTokenProviders();
 
-// Role seeding
 var app = builder.Build();
 
+// Crear BD (SQL Server o SQLite) y sembrar roles al arrancar
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+
+    // Asegura que la BD exista (y esquema básico)
+    var db = services.GetRequiredService<ApplicationDbContext>();
+    await db.Database.EnsureCreatedAsync();
+
+    // Role seeding
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
     string[] roleNames =
@@ -77,7 +94,9 @@ using (var scope = app.Services.CreateScope())
     foreach (var roleName in roleNames)
     {
         if (!await roleManager.RoleExistsAsync(roleName))
+        {
             await roleManager.CreateAsync(new IdentityRole(roleName));
+        }
     }
 }
 
