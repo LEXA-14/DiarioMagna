@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
@@ -43,7 +42,6 @@ builder.Services.AddAuthorization();
 // Database
 // Si hay DefaultConnection -> SQL Server (tu PC).
 // Si no hay -> SQLite (Render u otros entornos sin SQL Server).
-// Database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -74,7 +72,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 
 var app = builder.Build();
 
-// Crear BD (SQL Server o SQLite) y sembrar roles al arrancar
+// Crear BD (SQL Server o SQLite), roles y usuario admin al arrancar
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -99,6 +97,39 @@ using (var scope = app.Services.CreateScope())
         if (!await roleManager.RoleExistsAsync(roleName))
         {
             await roleManager.CreateAsync(new IdentityRole(roleName));
+        }
+    }
+
+    // Usuario administrador por defecto
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+
+    string adminEmail = "admin@diariomagna.com";
+    string adminPassword = "Admin123$";
+
+    var existingUser = await userManager.FindByEmailAsync(adminEmail);
+
+    if (existingUser == null)
+    {
+        var adminUser = new ApplicationUser
+        {
+            UserName = adminEmail,
+            Email = adminEmail,
+            EmailConfirmed = true
+        };
+
+        var createResult = await userManager.CreateAsync(adminUser, adminPassword);
+
+        if (createResult.Succeeded)
+        {
+            await userManager.AddToRoleAsync(adminUser, AppRoles.Administrador);
+        }
+        else
+        {
+            Console.WriteLine("? Error creando el admin inicial:");
+            foreach (var error in createResult.Errors)
+            {
+                Console.WriteLine(error.Description);
+            }
         }
     }
 }
