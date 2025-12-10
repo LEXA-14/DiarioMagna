@@ -8,15 +8,19 @@
 @using DiarioMagna.Domain.Models
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Hosting
 @using DiarioMagna.Components.Shared
+@using DiarioMagna.Services.Email
 
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IWebHostEnvironment Env
 @inject LayoutHeaderState HeaderState
+@inject INoticieroEmailService noticieroEmailService
+@inject UserManager<ApplicationUser> UserManager
 
 <PageHeader Icon="bi bi-file-earmark-plus"
             Title="Crear nuevo artículo"
@@ -293,6 +297,37 @@
 
         Db.Articles.Add(article);
         await Db.SaveChangesAsync();
+
+        var rolesDestino = new[]
+         {
+            "Secretaria",
+            "Admin",
+            "RelacionesPublicas",
+            "EncargadoSistema"
+        };
+
+        var usuarios = new List<ApplicationUser>();
+
+        foreach (var rol in rolesDestino)
+        {
+            var usersRol = await UserManager.GetUsersInRoleAsync(rol);
+            usuarios.AddRange(usersRol);
+        }
+
+        var emails = usuarios
+            .Where(u => !string.IsNullOrEmpty(u.Email))
+            .Select(u => u.Email!)
+            .Distinct()
+            .ToList();
+
+        foreach (var correo in emails)
+        {
+            await noticieroEmailService.SendArticleAsync(
+                correo,
+                article,
+                article.AttachmentPath
+            );
+        }
 
         if (_model.ReferencedArticleId.HasValue)
         {
