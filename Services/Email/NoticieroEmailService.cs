@@ -52,7 +52,9 @@ public class NoticieroEmailService : INoticieroEmailService
 
         if (!string.IsNullOrEmpty(attachmentPath))
         {
-            var fullPath = Path.Combine(_env.WebRootPath, "uploads", Path.GetFileName(attachmentPath));
+            var relativePath = attachmentPath.TrimStart('/');
+            var fullPath = Path.Combine(_env.WebRootPath, relativePath);
+
             if (File.Exists(fullPath))
             {
                 mail.Attachments.Add(new Attachment(fullPath));
