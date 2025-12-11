@@ -2,17 +2,6 @@
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "Secretaria,RelacionesPublicas,Administrador")]
 
-@using System.ComponentModel.DataAnnotations
-@using System.IO
-@using DiarioMagna.Data
-@using DiarioMagna.Domain.Models
-@using Microsoft.AspNetCore.Components.Authorization
-@using Microsoft.AspNetCore.Components.Forms
-@using Microsoft.AspNetCore.Identity
-@using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Hosting
-@using DiarioMagna.Components.Shared
-@using DiarioMagna.Services.Email
 
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation

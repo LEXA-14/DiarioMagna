@@ -2,11 +2,7 @@
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "EncargadoSistema,Administrador")]
 
-@using DiarioMagna.Data
-@using DiarioMagna.Services.Email
-@using DiarioMagna.Domain.Models
-@using Microsoft.EntityFrameworkCore
-@using DiarioMagna.Components.Shared
+
 
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
