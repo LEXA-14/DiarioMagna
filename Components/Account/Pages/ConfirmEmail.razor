@@ -1,13 +1,12 @@
 ﻿@page "/Account/ConfirmEmail"
-
 @using System.Text
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using DiarioMagna.Data
-
 @inject UserManager<ApplicationUser> UserManager
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@rendermode InteractiveServer
 
 <PageTitle>Confirmar correo</PageTitle>
 
@@ -65,9 +64,7 @@
 
     private void IrALogin()
     {
-        if (!string.IsNullOrWhiteSpace(ReturnUrl))
-            RedirectManager.RedirectTo(ReturnUrl);
-        else
+       
             NavigationManager.NavigateTo("/Account/Login");
     }
 }
