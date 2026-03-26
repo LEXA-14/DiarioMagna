@@ -1,11 +1,5 @@
 ﻿@page "/articles/details/{id:int}"
 @rendermode InteractiveServer
-
-@using DiarioMagna.Data
-@using DiarioMagna.Domain.Models
-@using Microsoft.EntityFrameworkCore
-@using DiarioMagna.Components.Shared
-
 @inject ApplicationDbContext Db
 @inject NavigationManager Navigation
 @inject LayoutHeaderState HeaderState
