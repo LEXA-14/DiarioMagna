@@ -267,6 +267,7 @@
         var email = user.Claims.FirstOrDefault(c => c.Type == "email")?.Value ?? name;
 
         string? attachmentPath = null;
+        string? imagePath = null;
 
         if (_uploadedFile != null)
         {
@@ -279,8 +280,20 @@
             using var stream = File.Create(filePath);
             await _uploadedFile.OpenReadStream(10 * 1024 * 1024).CopyToAsync(stream);
 
-            attachmentPath = $"/uploads/{fileName}";
+            var pathGenerado = $"/uploads/{fileName}";
+
+            var extension = Path.GetExtension(fileName).ToLower();
+            if (extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".gif")
+            {
+                imagePath = pathGenerado;
+            }
+            else
+            {
+                attachmentPath = pathGenerado;
+            }
         }
+
+        var categoriaSeleccionada = _categories.FirstOrDefault(c => c.Id == _model.CategoryId);
 
         var article = new Article
         {
@@ -291,7 +304,9 @@
             CreatedAt = DateTime.UtcNow,
             Status = ArticleStatus.Pendiente,
             CategoryId = _model.CategoryId,
+            Category = categoriaSeleccionada,
             PlanId = _defaultPlanId,
+            UploadedFilePath = imagePath,
             AttachmentPath = attachmentPath
         };
 

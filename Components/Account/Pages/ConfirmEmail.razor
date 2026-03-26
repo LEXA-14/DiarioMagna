@@ -1,5 +1,6 @@
 ﻿@page "/Account/ConfirmEmail"
 
+
 @using System.Text
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
@@ -15,21 +16,18 @@
     <div class="auth-card fade-in">
         <div class="auth-icon">✅</div>
 
-        <h1 class="auth-title">Correo confirmado</h1>
+        <h1 class="auth-title">@(isSuccess ? "Correo confirmado" : "Error de confirmación")</h1>
         <p class="auth-subtitle">
-            Tu cuenta ha sido confirmada correctamente.
+            @_statusMessage
         </p>
 
-        @if (!string.IsNullOrWhiteSpace(_statusMessage))
+        @if (isSuccess)
         {
-            <p class="small text-muted mb-4">@_statusMessage</p>
+            <p class="small text-muted">
+                Serás redirigido automáticamente al inicio de sesión...
+            </p>
         }
 
-        <button type="button"
-                class="btn btn-primary auth-submit w-100"
-                @onclick="IrALogin">
-            Ir a iniciar sesión
-        </button>
     </div>
 </div>
 
@@ -39,12 +37,14 @@
     [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
 
     private string _statusMessage = "";
+    private bool isSuccess = false;
 
     protected override async Task OnInitializedAsync()
     {
         if (string.IsNullOrWhiteSpace(UserId) || string.IsNullOrWhiteSpace(Code))
         {
             _statusMessage = "Los datos de confirmación no son válidos.";
+            isSuccess = false;
             return;
         }
 
@@ -52,22 +52,25 @@
         if (user is null)
         {
             _statusMessage = "No se encontró el usuario especificado.";
+            isSuccess = false;
             return;
         }
 
         var decodedCode = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
         var result = await UserManager.ConfirmEmailAsync(user, decodedCode);
 
-        _statusMessage = result.Succeeded
-            ? "Tu correo ha sido confirmado. Ya puedes iniciar sesión."
-            : "Ocurrió un problema al confirmar tu correo. Intenta nuevamente.";
-    }
+        if (result.Succeeded)
+        {
+            _statusMessage = "Ocurrió un problema al confirmar tu correo.";
+            isSuccess = false;
+            return;
+        }
 
-    private void IrALogin()
-    {
-        if (!string.IsNullOrWhiteSpace(ReturnUrl))
-            RedirectManager.RedirectTo(ReturnUrl);
-        else
-            NavigationManager.NavigateTo("/Account/Login");
+        isSuccess = true;
+        _statusMessage = "Tu correo ha sido confirmado correctamente.";
+
+        await Task.Delay(2000);
+
+        NavigationManager.NavigateTo("/Account/Login",forceLoad: true);
     }
 }

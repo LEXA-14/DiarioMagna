@@ -1,5 +1,6 @@
 ﻿@page "/Account/Login"
 
+
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
@@ -110,7 +111,16 @@
             return;
         }
 
-        // 3. Iniciar sesión usando el objeto usuario
+        // 3.Validar si tiene rol
+        var roles = await UserManager.GetRolesAsync(user);
+
+        if (roles == null || !roles.Any())
+        {
+            errorMessage = "Tu cuenta está pendiente de aprobación por un administrador.";
+            return;
+        }
+
+        // 4. Iniciar sesión usando el objeto usuario
         var result = await SignInManager.PasswordSignInAsync(
             user,
             Input.Password,
@@ -120,7 +130,20 @@
         if (result.Succeeded)
         {
             Logger.LogInformation("User logged in.");
-            RedirectManager.RedirectTo(ReturnUrl);
+
+            if (!string.IsNullOrWhiteSpace(ReturnUrl) && !ReturnUrl.Contains("/Account/Login"))
+            {
+                NavigationManager.NavigateTo(ReturnUrl, true);
+            }
+            else
+            {
+                NavigationManager.NavigateTo("/", true);
+            }
+        }
+        else if (result.RequiresTwoFactor)
+        {
+            NavigationManager.NavigateTo(
+                $"Account/LoginWith2fa?returnUrl={ReturnUrl}&rememberMe={Input.RememberMe}", true);
         }
         else if (result.RequiresTwoFactor)
         {

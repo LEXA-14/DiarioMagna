@@ -42,7 +42,7 @@
                 <label class="form-label auth-label">Nombre de usuario</label>
                 <InputText class="form-control auth-input"
                            @bind-Value="Input.UserName"
-                           placeholder="Ejemplo: Ángel Paredes" />
+                           placeholder="Ejemplo: ÁngelParedes" />
                 <ValidationMessage For="() => Input.UserName" class="text-danger small" />
             </div>
 
@@ -83,9 +83,6 @@
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = new();
-
-    [SupplyParameterFromQuery]
-    private string? ReturnUrl { get; set; }
 
     private string? Message => identityErrors is null
         ? null
@@ -134,7 +131,7 @@
             return;
         }
 
-        Logger.LogInformation("User created a new account with password.");
+        Logger.LogInformation("El usuario creó una nueva cuenta con esta contraseña.");
 
         var userId = await UserManager.GetUserIdAsync(user);
         var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
@@ -149,8 +146,7 @@
             new Dictionary<string, object?>
             {
                 ["userId"] = userId,
-                ["code"] = code,
-                ["returnUrl"] = ReturnUrl
+                ["code"] = code
             });
 
         await EmailSender.SendConfirmationLinkAsync(user, Input.Email, callbackUrl);
@@ -161,14 +157,13 @@
                 "Account/RegisterConfirmation",
                 new Dictionary<string, object?>
                 {
-                    ["email"] = Input.Email,
-                    ["returnUrl"] = ReturnUrl
+                    ["email"] = Input.Email
                 });
         }
         else
         {
             await SignInManager.SignInAsync(user, isPersistent: false);
-            RedirectManager.RedirectTo(ReturnUrl);
+            NavigationManager.NavigateTo("/", true);
         }
     }
 
@@ -178,7 +173,7 @@
     private IUserEmailStore<ApplicationUser> GetEmailStore()
     {
         if (!UserManager.SupportsUserEmail)
-            throw new NotSupportedException("Email is required.");
+            throw new NotSupportedException("Es requerido el Email.");
 
         return (IUserEmailStore<ApplicationUser>)UserStore;
     }
